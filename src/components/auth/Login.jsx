@@ -50,78 +50,100 @@ const Login = () => {
   };
 
   return (
-    <div className={`min-h-screen flex ${
+    <div className={`min-h-screen relative overflow-hidden ${
       isDark 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-        : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800' 
+        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
     }`}>
-      {/* Background Pattern */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className={`absolute -top-40 -right-40 w-80 h-80 rounded-full opacity-20 ${
-          isDark ? 'bg-blue-500' : 'bg-blue-200'
-        } blur-3xl`}></div>
-        <div className={`absolute -bottom-40 -left-40 w-80 h-80 rounded-full opacity-20 ${
-          isDark ? 'bg-purple-500' : 'bg-purple-200'
-        } blur-3xl`}></div>
+      {/* Advanced Background Pattern */}
+      <div className="absolute inset-0">
+        {/* Animated gradient orbs */}
+        <div className={`absolute top-20 left-20 w-96 h-96 rounded-full opacity-30 blur-3xl animate-pulse ${
+          isDark ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-gradient-to-r from-blue-300 to-cyan-300'
+        }`}></div>
+        <div className={`absolute bottom-20 right-20 w-80 h-80 rounded-full opacity-20 blur-3xl animate-pulse delay-1000 ${
+          isDark ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gradient-to-r from-purple-300 to-pink-300'
+        }`}></div>
+        <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full opacity-25 blur-2xl animate-pulse delay-500 ${
+          isDark ? 'bg-gradient-to-r from-green-500 to-blue-500' : 'bg-gradient-to-r from-green-300 to-blue-300'
+        }`}></div>
+        
+        {/* Grid pattern overlay */}
+        <div className={`absolute inset-0 ${
+          isDark 
+            ? 'bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)]' 
+            : 'bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)]'
+        } bg-[size:100px_100px]`}></div>
       </div>
 
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className={`fixed top-6 right-6 z-50 p-3 rounded-xl shadow-lg transition-all duration-300 ${
+        className={`fixed top-6 right-6 z-50 p-4 rounded-2xl backdrop-blur-md border transition-all duration-300 hover:scale-105 ${
           isDark 
-            ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700 border border-gray-700' 
-            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-        } hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500`}
+            ? 'bg-white/10 border-white/20 text-yellow-400 hover:bg-white/20 shadow-lg' 
+            : 'bg-white/30 border-white/30 text-gray-700 hover:bg-white/50 shadow-xl'
+        } focus:outline-none focus:ring-2 focus:ring-primary-500`}
       >
-        {isDark ? <FiSun size={20} /> : <FiMoon size={20} />}
+        {isDark ? <FiSun size={24} /> : <FiMoon size={24} />}
       </button>
 
       {/* Main Content */}
-      <div className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-md space-y-8 animate-fade-in">
           {/* Header */}
-          <div className="text-center">
+          <div className="text-center space-y-6">
             <div className="relative inline-block">
+              <div className={`absolute -inset-4 rounded-3xl blur-xl opacity-50 ${
+                isDark ? 'bg-gradient-to-r from-blue-400 to-purple-400' : 'bg-gradient-to-r from-blue-300 to-purple-300'
+              }`}></div>
               <img
-                className={`w-16 h-16 mx-auto rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105 ${
-                  isDark ? 'ring-4 ring-gray-700' : 'ring-4 ring-white'
-                }`}
-                src="/biztras.png"
+                className="relative w-20 h-20 mx-auto rounded-3xl shadow-2xl transition-transform duration-300 hover:scale-110"
+                src="/icons/icon-192x192.png"
                 alt="BizTras Logo"
                 onError={(e) => {
-                  e.target.style.display = 'none';
+                  e.target.src = '/biztras.png';
                 }}
               />
-              <div className={`absolute -inset-1 rounded-2xl blur opacity-30 ${
-                isDark ? 'bg-blue-500' : 'bg-blue-400'
-              }`}></div>
             </div>
-            <h2 className={`mt-6 text-3xl font-bold tracking-tight ${
-              isDark ? 'text-white' : 'text-gray-900'
-            }`}>
-              Welcome back
-            </h2>
-            <p className={`mt-2 text-sm ${
-              isDark ? 'text-gray-400' : 'text-gray-600'
-            }`}>
-              Sign in to your BizTras Cloud account
-            </p>
+            <div className="space-y-3">
+              <h2 className={`text-4xl font-bold tracking-tight ${
+                isDark ? 'text-white' : 'text-gray-900'
+              }`}>
+                Welcome back
+              </h2>
+              <p className={`text-lg ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Sign in to your BizTras Cloud account
+              </p>
+            </div>
           </div>
 
-          {/* Form Card */}
-          <div className={`card-elevated p-8 ${
-            isDark ? 'bg-gray-800/50 backdrop-blur-sm' : 'bg-white/70 backdrop-blur-sm'
+          {/* Form Card with Glassmorphism */}
+          <div className={`relative backdrop-blur-xl rounded-3xl p-8 shadow-2xl border transition-all duration-300 ${
+            isDark 
+              ? 'bg-white/5 border-white/10 shadow-black/20' 
+              : 'bg-white/20 border-white/30 shadow-black/10'
           }`}>
-            <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Gradient border effect */}
+            <div className={`absolute -inset-0.5 rounded-3xl opacity-30 blur-sm ${
+              isDark 
+                ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500' 
+                : 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400'
+            }`}></div>
+            
+            <form className="relative space-y-6" onSubmit={handleSubmit}>
               {/* Email Field */}
-              <div className="form-group">
-                <label className="form-label">
+              <div className="space-y-2">
+                <label className={`block text-sm font-medium ${
+                  isDark ? 'text-gray-200' : 'text-gray-700'
+                }`}>
                   Email address
                 </label>
                 <div className="relative">
-                  <div className={`absolute inset-y-6 left-0 pl-3 flex items-center pointer-events-none ${
-                    isDark ? 'text-gray-400' : 'text-gray-400'
+                  <div className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
+                    isDark ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     <FiMail size={20} />
                   </div>
@@ -133,20 +155,26 @@ const Login = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="input pl-11"
+                    className={`w-full pl-12 pr-4 py-4 rounded-2xl backdrop-blur-sm border transition-all duration-200 ${
+                      isDark 
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-white/20' 
+                        : 'bg-white/30 border-white/20 text-gray-900 placeholder-gray-600 focus:bg-white/50 focus:border-white/40'
+                    } focus:outline-none focus:ring-2 focus:ring-primary-500/50`}
                     placeholder="Enter your email"
                   />
                 </div>
               </div>
 
               {/* Password Field */}
-              <div className="form-group">
-                <label className="form-label">
+              <div className="space-y-2">
+                <label className={`block text-sm font-medium ${
+                  isDark ? 'text-gray-200' : 'text-gray-700'
+                }`}>
                   Password
                 </label>
                 <div className="relative">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
-                    isDark ? 'text-gray-400' : 'text-gray-400'
+                  <div className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${
+                    isDark ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     <FiLock size={20} />
                   </div>
@@ -158,13 +186,17 @@ const Login = () => {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="input pl-12 pr-10"
+                    className={`w-full pl-12 pr-12 py-4 rounded-2xl backdrop-blur-sm border transition-all duration-200 ${
+                      isDark 
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-400 focus:bg-white/10 focus:border-white/20' 
+                        : 'bg-white/30 border-white/20 text-gray-900 placeholder-gray-600 focus:bg-white/50 focus:border-white/40'
+                    } focus:outline-none focus:ring-2 focus:ring-primary-500/50`}
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
-                    className={`absolute inset-y-0 right-0 pr-3 flex items-center hover:text-primary-600 transition-colors ${
-                      isDark ? 'text-gray-400' : 'text-gray-400'
+                    className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors ${
+                      isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
                     }`}
                     onClick={() => setShowPassword(!showPassword)}
                   >
@@ -177,11 +209,15 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary btn-lg w-full relative overflow-hidden"
+                className={`w-full py-4 px-6 rounded-2xl font-semibold text-white transition-all duration-300 transform hover:scale-105 ${
+                  loading 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                } focus:outline-none focus:ring-2 focus:ring-primary-500/50`}
               >
                 {loading ? (
                   <div className="flex items-center justify-center">
-                    <FiLoader className="animate-spin mr-2" size={20} />
+                    <FiLoader className="animate-spin mr-3" size={20} />
                     Signing in...
                   </div>
                 ) : (
@@ -191,17 +227,22 @@ const Login = () => {
 
               {/* Register Link */}
               <div className="text-center pt-4">
-                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                   Don't have an account?{' '}
                   <Link
                     to="/register"
-                    className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
+                    className="font-semibold text-primary-600 hover:text-primary-500 transition-colors"
                   >
                     Create account
                   </Link>
                 </p>
               </div>
             </form>
+          </div>
+
+          {/* Additional Info */}
+          <div className={`text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p>Secure access to your cloud infrastructure</p>
           </div>
         </div>
       </div>

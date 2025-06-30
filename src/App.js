@@ -11,6 +11,7 @@ import CloudDashboard from './components/cloud/CloudDashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import PWAInstallPrompt from './components/common/PWAInstallPrompt';
 
 function App() {
   const { currentUser, loading } = useAuth();
@@ -80,6 +81,9 @@ function App() {
 
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
+
+      {/* PWA Install Prompt - only show when user is logged in */}
+      {currentUser && <PWAInstallPrompt />}
     </div>
   );
 }
