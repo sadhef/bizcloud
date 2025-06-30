@@ -4,12 +4,12 @@ import { clearStoredAuth } from './storage';
 
 // Create axios instance with proper configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://bizcloud-cnp2.vercel.app/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for CORS with credentials
+  withCredentials: false, // Important for CORS
 });
 
 // Request interceptor
@@ -26,14 +26,6 @@ api.interceptors.request.use(
         console.error('Error parsing auth token:', error);
       }
     }
-    
-    // Debug logging
-    console.log('API Request:', {
-      url: config.url,
-      method: config.method,
-      baseURL: config.baseURL
-    });
-    
     return config;
   },
   (error) => {
@@ -47,26 +39,9 @@ api.interceptors.response.use(
     return response.data;
   },
   (error) => {
-    console.error('API Error:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        baseURL: error.config?.baseURL
-      }
-    });
-
     // Handle network errors
     if (!error.response) {
-      if (error.code === 'ERR_NETWORK') {
-        toast.error('Network error: Unable to connect to server. Please check your connection.');
-      } else if (error.code === 'ECONNABORTED') {
-        toast.error('Request timeout. Please try again.');
-      } else {
-        toast.error('Network error. Please check your connection and try again.');
-      }
+      toast.error('Network error. Please check your connection and ensure the backend server is running.');
       return Promise.reject(error);
     }
 
