@@ -4,7 +4,7 @@ import { clearStoredAuth } from './storage';
 
 // Create axios instance with proper configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://bizcloud-cnp2.vercel.app/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
