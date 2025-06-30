@@ -120,7 +120,7 @@ const Login = () => {
                   Email address
                 </label>
                 <div className="relative">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
+                  <div className={`absolute inset-y-6 left-0 pl-3 flex items-center pointer-events-none ${
                     isDark ? 'text-gray-400' : 'text-gray-400'
                   }`}>
                     <FiMail size={20} />
@@ -133,7 +133,7 @@ const Login = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="input pl-10"
+                    className="input pl-11"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -158,7 +158,7 @@ const Login = () => {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="input pl-10 pr-10"
+                    className="input pl-12 pr-10"
                     placeholder="Enter your password"
                   />
                   <button
@@ -202,12 +202,6 @@ const Login = () => {
                 </p>
               </div>
             </form>
-          </div>
-
-          {/* Demo Credentials */}
-          <div className={`text-center text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-            <p className="mb-1">Demo credentials:</p>
-            <p>Admin: admin@biztras.com / password</p>
           </div>
         </div>
       </div>

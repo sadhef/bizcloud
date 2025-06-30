@@ -1,19 +1,19 @@
 {
   "short_name": "BizTras Cloud",
-  "name": "BizTras Cloud Management Platform",
-  "description": "Cloud infrastructure management and monitoring platform",
+  "name": "BizTras Cloud",
+  "description": "Cloud infrastructure management platform",
   "icons": [
     {
-      "src": "biztras.png",
+      "src": "icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     },
     {
-      "src": "biztras.png",
+      "src": "icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     }
   ],
   "start_url": "/",

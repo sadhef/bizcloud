@@ -159,7 +159,7 @@ const Register = () => {
             <p className={`mt-2 text-sm ${
               isDark ? 'text-gray-400' : 'text-gray-600'
             }`}>
-              Join BizTras Cloud Management Platform
+              Join BizTras Cloud  Platform
             </p>
           </div>
 

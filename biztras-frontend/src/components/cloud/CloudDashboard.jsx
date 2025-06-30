@@ -3,7 +3,21 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { toast } from 'react-toastify';
-import { FiPlus, FiTrash2, FiDownload, FiEye, FiPrinter, FiArrowLeft } from 'react-icons/fi';
+import { 
+  FiPlus, 
+  FiTrash2, 
+  FiDownload, 
+  FiEye, 
+  FiPrinter, 
+  FiArrowLeft, 
+  FiSave,
+  FiRefreshCw,
+  FiSettings,
+  FiCalendar,
+  FiEdit3,
+  FiCheck,
+  FiX
+} from 'react-icons/fi';
 import api from '../../services/api';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -71,7 +85,7 @@ const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false }) 
         fontWeight: value ? 'bold' : 'normal',
         transition: 'all 0.2s ease-in-out'
       }}
-      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center ${
+      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-center transition-all duration-200 ${
         isDark 
           ? 'border-gray-600' 
           : 'border-gray-300'
@@ -127,16 +141,150 @@ const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false }) 
   );
 };
 
+// Configuration Edit Modal Component
+const ConfigurationModal = ({ 
+  isOpen, 
+  onClose, 
+  type, 
+  config, 
+  onSave, 
+  isDark 
+}) => {
+  const [formData, setFormData] = useState(config);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setFormData(config);
+  }, [config]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(formData);
+      onClose();
+      toast.success(`${type} configuration updated successfully!`);
+    } catch (error) {
+      toast.error(`Failed to update ${type} configuration`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className={`card w-full max-w-md mx-auto animate-scale-in ${
+        isDark ? 'bg-gray-800' : 'bg-white'
+      }`}>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {type} Configuration
+            </h3>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg transition-colors ${
+                isDark 
+                  ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="form-group">
+              <label className="form-label">
+                Report Title
+              </label>
+              <input
+                type="text"
+                value={formData.reportTitle || ''}
+                onChange={(e) => setFormData({ ...formData, reportTitle: e.target.value })}
+                className="input"
+                placeholder={`${type} Report Title`}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.reportDates?.startDate || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    reportDates: { 
+                      ...formData.reportDates, 
+                      startDate: e.target.value 
+                    } 
+                  })}
+                  className="input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.reportDates?.endDate || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    reportDates: { 
+                      ...formData.reportDates, 
+                      endDate: e.target.value 
+                    } 
+                  })}
+                  className="input"
+                />
+              </div>
+            </div>
+
+            {type === 'Cloud Service' && (
+              <div className="form-group">
+                <label className="form-label">
+                  Total Space Used
+                </label>
+                <input
+                  type="text"
+                  value={formData.totalSpaceUsed || ''}
+                  onChange={(e) => setFormData({ ...formData, totalSpaceUsed: e.target.value })}
+                  className="input"
+                  placeholder="e.g., 2.5TB"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              onClick={onClose}
+              className="btn btn-secondary"
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn btn-primary"
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Helper functions
-const isCloudStatusColumn = (column) => {
-  return column === 'Status' || 
-    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
-};
-
-const isBackupWeekdayColumn = (column) => {
-  return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
-};
-
 const formatDate = (date) => {
   if (!date) return '';
   return new Date(date).toLocaleDateString('en-US', {
@@ -276,14 +424,10 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} py-6`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
           <button
             onClick={() => navigate('/cloud-dashboard')}
-            className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium ${
-              isDark
-                ? 'border-gray-600 text-gray-300 bg-gray-800 hover:bg-gray-700'
-                : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-            }`}
+            className="btn btn-secondary"
           >
             <FiArrowLeft className="mr-2" />
             Back to Edit
@@ -291,15 +435,15 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
           
           <button
             onClick={handlePrint}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="btn btn-primary"
           >
             <FiPrinter className="mr-2" />
             Print Report
           </button>
         </div>
 
-        <div className={`${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} shadow-lg rounded-lg overflow-hidden`}>
-          <div className="text-center py-8 px-6 border-b">
+        <div className={`card overflow-hidden ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+          <div className="text-center py-8 px-6 border-b border-gray-200 dark:border-gray-700">
             <img 
               src="./biztras.png" 
               alt="BizTras Logo" 
@@ -308,13 +452,13 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                 e.target.style.display = 'none';
               }}
             />
-            <h1 className="text-3xl font-bold mb-2">Cloud Infrastructure Status Report</h1>
-            <h2 className="text-xl font-semibold mb-2">{cloudData.reportTitle || 'Cloud Status Report'}</h2>
-            <h3 className="text-xl font-semibold mb-4">{backupData.reportTitle || 'Backup Server Cronjob Status'}</h3>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Cloud Infrastructure Status Report</h1>
+            <h2 className="text-lg sm:text-xl font-semibold mb-2">{cloudData.reportTitle || 'Cloud Status Report'}</h2>
+            <h3 className="text-lg sm:text-xl font-semibold mb-4">{backupData.reportTitle || 'Backup Server Cronjob Status'}</h3>
           </div>
 
-          <div className="p-6">
-            <h3 className="text-xl font-bold mb-4">☁️ {cloudData.reportTitle || 'Cloud Services Status'}</h3>
+          <div className="p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold mb-4">☁️ {cloudData.reportTitle || 'Cloud Services Status'}</h3>
             <div className="overflow-x-auto mb-8">
               <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
@@ -322,7 +466,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                     {cloudData.columns.map((column, index) => (
                       <th
                         key={index}
-                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
                           isDark ? 'text-gray-300' : 'text-gray-500'
                         }`}
                       >
@@ -335,7 +479,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                   {cloudData.rows.map((row, rowIndex) => (
                     <tr key={rowIndex}>
                       {cloudData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                           {row[column] || 'N/A'}
                         </td>
                       ))}
@@ -345,7 +489,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               </table>
             </div>
 
-            <h3 className="text-xl font-bold mb-4">🗄️ {backupData.reportTitle || 'Backup Server Cronjob Status'}</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-4">🗄️ {backupData.reportTitle || 'Backup Server Cronjob Status'}</h3>
             <div className="overflow-x-auto">
               <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
@@ -353,7 +497,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                     {backupData.columns.map((column, index) => (
                       <th
                         key={index}
-                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
                           isDark ? 'text-gray-300' : 'text-gray-500'
                         }`}
                       >
@@ -366,7 +510,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                   {backupData.rows.map((row, rowIndex) => (
                     <tr key={rowIndex}>
                       {backupData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
                           {row[column] || 'N/A'}
                         </td>
                       ))}
@@ -382,7 +526,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
   );
 };
 
-// Export Dropdown Component (Simplified)
+// Export Dropdown Component
 const ExportDropdown = ({ reportData, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -457,25 +601,25 @@ const ExportDropdown = ({ reportData, disabled = false }) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled || isExporting}
-        className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+        className={`btn ${
           disabled || isExporting
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-green-600 hover:bg-green-700'
-        } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500`}
+            ? 'btn-secondary opacity-50 cursor-not-allowed'
+            : 'btn-success'
+        }`}
       >
         <FiDownload className="mr-2" />
         {isExporting ? 'Exporting...' : 'Export'}
       </button>
 
       {isOpen && !disabled && (
-        <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg z-50 ${
+        <div className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg z-50 animate-scale-in ${
           isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
         }`}>
           <div className="py-1">
             <button
               onClick={() => handleExport('excel')}
               disabled={isExporting}
-              className={`w-full text-left px-4 py-2 text-sm ${
+              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                 isDark
                   ? 'hover:bg-gray-700 text-gray-200'
                   : 'hover:bg-gray-50 text-gray-900'
@@ -521,6 +665,10 @@ const CloudDashboard = () => {
   // Column management states
   const [newCloudColumnName, setNewCloudColumnName] = useState('');
   const [newBackupColumnName, setNewBackupColumnName] = useState('');
+
+  // Modal states
+  const [showCloudConfigModal, setShowCloudConfigModal] = useState(false);
+  const [showBackupConfigModal, setShowBackupConfigModal] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -618,19 +766,18 @@ const CloudDashboard = () => {
     }
   };
 
-  // Handle date changes
-  const handleCloudDateChange = (field, value) => {
-    setCloudReportDates({
-      ...cloudReportDates,
-      [field]: value
-    });
+  // Handle configuration updates
+  const handleCloudConfigSave = async (config) => {
+    setCloudReportTitle(config.reportTitle);
+    setCloudReportDates(config.reportDates);
+    setCloudTotalSpaceUsed(config.totalSpaceUsed);
+    await saveData();
   };
 
-  const handleBackupDateChange = (field, value) => {
-    setBackupReportDates({
-      ...backupReportDates,
-      [field]: value
-    });
+  const handleBackupConfigSave = async (config) => {
+    setBackupReportTitle(config.reportTitle);
+    setBackupReportDates(config.reportDates);
+    await saveData();
   };
 
   // Cloud Column Management
@@ -782,11 +929,7 @@ const CloudDashboard = () => {
           type="date"
           value={row[column] || ''}
           onChange={(e) => handleCloudCellChange(rowIndex, column, e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-            isDark 
-              ? 'bg-gray-700 border-gray-600 text-white' 
-              : 'bg-white border-gray-300 text-gray-900'
-          }`}
+          className="input"
         />
       );
     } else {
@@ -795,11 +938,7 @@ const CloudDashboard = () => {
           type="text"
           value={row[column] || ''}
           onChange={(e) => handleCloudCellChange(rowIndex, column, e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-            isDark 
-              ? 'bg-gray-700 border-gray-600 text-white' 
-              : 'bg-white border-gray-300 text-gray-900'
-          }`}
+          className="input"
         />
       );
     }
@@ -823,11 +962,7 @@ const CloudDashboard = () => {
           type="text"
           value={row[column] || ''}
           onChange={(e) => handleBackupCellChange(rowIndex, column, e.target.value)}
-          className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
-            isDark 
-              ? 'bg-gray-700 border-gray-600 text-white' 
-              : 'bg-white border-gray-300 text-gray-900'
-          }`}
+          className="input"
         />
       );
     }
@@ -845,11 +980,13 @@ const CloudDashboard = () => {
       <div className={`flex justify-center items-center min-h-screen ${
         isDark ? 'bg-gray-900' : 'bg-gray-50'
       }`}>
-        <div className="text-center">
-          <div className={`animate-spin rounded-full h-16 w-16 border-b-2 ${
-            isDark ? 'border-indigo-400' : 'border-indigo-600'
-          } mx-auto`}></div>
-          <p className={`mt-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading cloud dashboard data...</p>
+        <div className="text-center animate-fade-in">
+          <div className={`animate-spin rounded-full h-16 w-16 border-b-2 mx-auto mb-4 ${
+            isDark ? 'border-primary-400' : 'border-primary-600'
+          }`}></div>
+          <p className={`text-lg font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            Loading cloud dashboard data...
+          </p>
         </div>
       </div>
     );
@@ -857,19 +994,19 @@ const CloudDashboard = () => {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} py-6`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-4 sm:space-y-0">
           <div>
-            <h1 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className={`text-2xl sm:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
               Cloud Infrastructure Dashboard
             </h1>
-            <p className={`mt-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className={`mt-2 text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
               Manage cloud services and backup server configurations
             </p>
           </div>
           
-          <div className="flex space-x-3">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <ExportDropdown 
               reportData={getReportData()} 
               disabled={cloudRows.length === 0 && backupRows.length === 0}
@@ -877,7 +1014,7 @@ const CloudDashboard = () => {
             
             <button
               onClick={togglePreviewMode}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="btn btn-secondary"
             >
               <FiEye className="mr-2" />
               Preview & Print
@@ -886,12 +1023,9 @@ const CloudDashboard = () => {
             <button
               onClick={saveData}
               disabled={saveLoading}
-              className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                saveLoading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+              className={`btn ${saveLoading ? 'btn-secondary opacity-50' : 'btn-primary'}`}
             >
+              <FiSave className="mr-2" />
               {saveLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
@@ -899,21 +1033,21 @@ const CloudDashboard = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 p-4 rounded-lg bg-error-50 border border-error-200 text-error-700 dark:bg-error-900/20 dark:border-error-800 dark:text-error-400">
             {error}
           </div>
         )}
 
         {/* Tab Navigation */}
-        <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} shadow rounded-lg mb-6`}>
-          <div className="flex border-b">
+        <div className="card mb-6 overflow-hidden">
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setActiveTab('cloud')}
-              className={`flex-1 py-4 px-6 text-center font-medium text-sm ${
+              className={`flex-1 py-4 px-6 text-center font-medium text-sm transition-colors ${
                 activeTab === 'cloud'
                   ? isDark
-                    ? 'border-b-2 border-indigo-400 text-indigo-400 bg-gray-700'
-                    : 'border-b-2 border-indigo-500 text-indigo-600 bg-indigo-50'
+                    ? 'border-b-2 border-primary-400 text-primary-400 bg-gray-700'
+                    : 'border-b-2 border-primary-500 text-primary-600 bg-primary-50'
                   : isDark
                     ? 'text-gray-400 hover:text-gray-300'
                     : 'text-gray-500 hover:text-gray-700'
@@ -923,11 +1057,11 @@ const CloudDashboard = () => {
             </button>
             <button
               onClick={() => setActiveTab('backup')}
-              className={`flex-1 py-4 px-6 text-center font-medium text-sm ${
+              className={`flex-1 py-4 px-6 text-center font-medium text-sm transition-colors ${
                 activeTab === 'backup'
                   ? isDark
-                    ? 'border-b-2 border-green-400 text-green-400 bg-gray-700'
-                    : 'border-b-2 border-green-500 text-green-600 bg-green-50'
+                    ? 'border-b-2 border-success-400 text-success-400 bg-gray-700'
+                    : 'border-b-2 border-success-500 text-success-600 bg-success-50'
                   : isDark
                     ? 'text-gray-400 hover:text-gray-300'
                     : 'text-gray-500 hover:text-gray-700'
@@ -940,85 +1074,49 @@ const CloudDashboard = () => {
 
         {/* Cloud Services Tab */}
         {activeTab === 'cloud' && (
-          <>
-            {/* Cloud Configuration */}
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} shadow rounded-lg p-6 mb-6`}>
-              <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Cloud Service Configuration
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-6">
+            {/* Cloud Configuration Header */}
+            <div className="card p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    Report Title
-                  </label>
-                  <input
-                    type="text"
-                    value={cloudReportTitle}
-                    onChange={(e) => setCloudReportTitle(e.target.value)}
-                    className={`input`}
-                  />
+                  <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Cloud Service Configuration
+                  </h2>
+                  <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {cloudReportTitle} • {formatDate(cloudReportDates.startDate)} - {formatDate(cloudReportDates.endDate)}
+                    {cloudTotalSpaceUsed && ` • ${cloudTotalSpaceUsed}`}
+                  </p>
                 </div>
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    value={cloudReportDates.startDate}
-                    onChange={(e) => handleCloudDateChange('startDate', e.target.value)}
-                    className={`input`}
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={cloudReportDates.endDate}
-                    onChange={(e) => handleCloudDateChange('endDate', e.target.value)}
-                    className={`input`}
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    Total Space Used
-                  </label>
-                  <input
-                    type="text"
-                    value={cloudTotalSpaceUsed}
-                    onChange={(e) => setCloudTotalSpaceUsed(e.target.value)}
-                    placeholder="e.g., 2.5TB"
-                    className={`input`}
-                  />
-                </div>
+                <button
+                  onClick={() => setShowCloudConfigModal(true)}
+                  className="btn btn-secondary"
+                >
+                  <FiSettings className="mr-2" />
+                  Configure
+                </button>
               </div>
             </div>
 
             {/* Cloud Column Management */}
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} shadow rounded-lg p-6 mb-6`}>
+            <div className="card p-4 sm:p-6">
               <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Cloud Service Columns
               </h2>
               
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-col sm:flex-row gap-2 mb-4">
                 <input
                   type="text"
                   value={newCloudColumnName}
                   onChange={(e) => setNewCloudColumnName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddCloudColumn()}
                   placeholder="Enter new column name"
-                  className={`px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-                    isDark 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                  className="input flex-1"
                 />
                 <button
                   onClick={handleAddCloudColumn}
-                  className="btn-primary"
+                  className="btn btn-primary"
                 >
+                  <FiPlus className="mr-2" />
                   Add Column
                 </button>
               </div>
@@ -1031,8 +1129,8 @@ const CloudDashboard = () => {
                     <span>{column}</span>
                     <button
                       onClick={() => handleRemoveCloudColumn(index)}
-                      className={`ml-2 text-red-500 hover:text-red-700 focus:outline-none ${
-                        isDark ? 'hover:text-red-400' : 'hover:text-red-600'
+                      className={`ml-2 text-error-500 hover:text-error-700 focus:outline-none transition-colors ${
+                        isDark ? 'hover:text-error-400' : 'hover:text-error-600'
                       }`}
                     >
                       <FiTrash2 size={14} />
@@ -1043,142 +1141,126 @@ const CloudDashboard = () => {
             </div>
 
             {/* Cloud Data Grid */}
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} shadow rounded-lg p-6 mb-6 overflow-x-auto`}>
-              <div className="flex justify-between mb-4">
-                <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Cloud Services Data
-                </h2>
-                <button
-                  onClick={handleAddCloudRow}
-                  className="btn-primary"
-                >
-                  <FiPlus className="mr-2" /> Add Service
-                </button>
+            <div className="card overflow-hidden">
+              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Cloud Services Data
+                  </h2>
+                  <button
+                    onClick={handleAddCloudRow}
+                    className="btn btn-primary"
+                  >
+                    <FiPlus className="mr-2" /> Add Service
+                  </button>
+                </div>
               </div>
               
-              <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
-                  <tr>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                      isDark ? 'text-gray-300' : 'text-gray-500'
-                    }`}>
-                      Actions
-                    </th>
-                    {cloudColumns.map((column, index) => (
-                      <th
-                        key={index}
-                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDark ? 'text-gray-300' : 'text-gray-500'
-                        }`}
-                      >
-                        {column}
+              <div className="overflow-x-auto">
+                <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+                    <tr>
+                      <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        isDark ? 'text-gray-300' : 'text-gray-500'
+                      }`}>
+                        Actions
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
-                  {cloudRows.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleRemoveCloudRow(rowIndex)}
-                          className="text-red-600 hover:text-red-900"
+                      {cloudColumns.map((column, index) => (
+                        <th
+                          key={index}
+                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                            isDark ? 'text-gray-300' : 'text-gray-500'
+                          }`}
                         >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </td>
-                      {cloudColumns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-6 py-4 whitespace-nowrap">
-                          {renderCloudCell(row, column, rowIndex)}
-                        </td>
+                          {column}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                  {cloudRows.length === 0 && (
-                    <tr>
-                      <td 
-                        colSpan={cloudColumns.length + 1} 
-                        className={`px-6 py-4 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
-                      >
-                        No cloud services configured. Click "Add Service" to get started.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
+                    {cloudRows.map((row, rowIndex) => (
+                      <tr key={rowIndex} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => handleRemoveCloudRow(rowIndex)}
+                            className="text-error-600 hover:text-error-900 transition-colors"
+                            title="Remove row"
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
+                        </td>
+                        {cloudColumns.map((column, colIndex) => (
+                          <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            {renderCloudCell(row, column, rowIndex)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {cloudRows.length === 0 && (
+                      <tr>
+                        <td 
+                          colSpan={cloudColumns.length + 1} 
+                          className={`px-6 py-12 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <FiSettings className="w-12 h-12 mb-4 text-gray-400" />
+                            <p className="text-lg font-medium mb-2">No cloud services configured</p>
+                            <p>Click "Add Service" to get started.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Backup Services Tab */}
         {activeTab === 'backup' && (
-          <>
-            {/* Backup Configuration */}
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} shadow rounded-lg p-6 mb-6`}>
-              <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Backup Server Configuration
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-6">
+            {/* Backup Configuration Header */}
+            <div className="card p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                 <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    Report Title
-                  </label>
-                  <input
-                    type="text"
-                    value={backupReportTitle}
-                    onChange={(e) => setBackupReportTitle(e.target.value)}
-                    className={`input`}
-                  />
+                  <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Backup Server Configuration
+                  </h2>
+                  <p className={`mt-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {backupReportTitle} • {formatDate(backupReportDates.startDate)} - {formatDate(backupReportDates.endDate)}
+                  </p>
                 </div>
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    value={backupReportDates.startDate}
-                    onChange={(e) => handleBackupDateChange('startDate', e.target.value)}
-                    className={`input`}
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={backupReportDates.endDate}
-                    onChange={(e) => handleBackupDateChange('endDate', e.target.value)}
-                    className={`input`}
-                  />
-                </div>
+                <button
+                  onClick={() => setShowBackupConfigModal(true)}
+                  className="btn btn-secondary"
+                >
+                  <FiSettings className="mr-2" />
+                  Configure
+                </button>
               </div>
             </div>
 
             {/* Backup Column Management */}
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} shadow rounded-lg p-6 mb-6`}>
+            <div className="card p-4 sm:p-6">
               <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Backup Server Columns
               </h2>
               
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-col sm:flex-row gap-2 mb-4">
                 <input
                   type="text"
                   value={newBackupColumnName}
                   onChange={(e) => setNewBackupColumnName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddBackupColumn()}
                   placeholder="Enter new column name"
-                  className={`px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
-                    isDark 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
+                  className="input flex-1"
                 />
                 <button
                   onClick={handleAddBackupColumn}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="btn btn-success"
                 >
+                  <FiPlus className="mr-2" />
                   Add Column
                 </button>
               </div>
@@ -1191,8 +1273,8 @@ const CloudDashboard = () => {
                     <span>{column}</span>
                     <button
                       onClick={() => handleRemoveBackupColumn(index)}
-                      className={`ml-2 text-red-500 hover:text-red-700 focus:outline-none ${
-                        isDark ? 'hover:text-red-400' : 'hover:text-red-600'
+                      className={`ml-2 text-error-500 hover:text-error-700 focus:outline-none transition-colors ${
+                        isDark ? 'hover:text-error-400' : 'hover:text-error-600'
                       }`}
                     >
                       <FiTrash2 size={14} />
@@ -1203,79 +1285,114 @@ const CloudDashboard = () => {
             </div>
 
             {/* Backup Data Grid */}
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} shadow rounded-lg p-6 mb-6 overflow-x-auto`}>
-              <div className="flex justify-between mb-4">
-                <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Backup Server Data
-                </h2>
-                <button
-                  onClick={handleAddBackupRow}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-                >
-                  <FiPlus className="mr-2" /> Add Server
-                </button>
+            <div className="card overflow-hidden">
+              <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Backup Server Data
+                  </h2>
+                  <button
+                    onClick={handleAddBackupRow}
+                    className="btn btn-success"
+                  >
+                    <FiPlus className="mr-2" /> Add Server
+                  </button>
+                </div>
               </div>
               
-              <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
-                  <tr>
-                    <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                      isDark ? 'text-gray-300' : 'text-gray-500'
-                    }`}>
-                      Actions
-                    </th>
-                    {backupColumns.map((column, index) => (
-                      <th
-                        key={index}
-                        className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDark ? 'text-gray-300' : 'text-gray-500'
-                        }`}
-                      >
-                        {column}
+              <div className="overflow-x-auto">
+                <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+                    <tr>
+                      <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                        isDark ? 'text-gray-300' : 'text-gray-500'
+                      }`}>
+                        Actions
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
-                  {backupRows.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleRemoveBackupRow(rowIndex)}
-                          className="text-red-600 hover:text-red-900"
+                      {backupColumns.map((column, index) => (
+                        <th
+                          key={index}
+                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                            isDark ? 'text-gray-300' : 'text-gray-500'
+                          }`}
                         >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </td>
-                      {backupColumns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-6 py-4 whitespace-nowrap">
-                          {renderBackupCell(row, column, rowIndex)}
-                        </td>
+                          {column}
+                        </th>
                       ))}
                     </tr>
-                  ))}
-                  {backupRows.length === 0 && (
-                    <tr>
-                      <td 
-                        colSpan={backupColumns.length + 1} 
-                        className={`px-6 py-4 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
-                      >
-                        No backup servers configured. Click "Add Server" to get started.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
+                    {backupRows.map((row, rowIndex) => (
+                      <tr key={rowIndex} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => handleRemoveBackupRow(rowIndex)}
+                            className="text-error-600 hover:text-error-900 transition-colors"
+                            title="Remove row"
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
+                        </td>
+                        {backupColumns.map((column, colIndex) => (
+                          <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            {renderBackupCell(row, column, rowIndex)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {backupRows.length === 0 && (
+                      <tr>
+                        <td 
+                          colSpan={backupColumns.length + 1} 
+                          className={`px-6 py-12 text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <FiSettings className="w-12 h-12 mb-4 text-gray-400" />
+                            <p className="text-lg font-medium mb-2">No backup servers configured</p>
+                            <p>Click "Add Server" to get started.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Footer Info */}
         {lastUpdated && (
-          <div className={`text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+          <div className={`text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-8`}>
             Last updated: {new Date(lastUpdated).toLocaleString()}
           </div>
         )}
+
+        {/* Configuration Modals */}
+        <ConfigurationModal
+          isOpen={showCloudConfigModal}
+          onClose={() => setShowCloudConfigModal(false)}
+          type="Cloud Service"
+          config={{
+            reportTitle: cloudReportTitle,
+            reportDates: cloudReportDates,
+            totalSpaceUsed: cloudTotalSpaceUsed
+          }}
+          onSave={handleCloudConfigSave}
+          isDark={isDark}
+        />
+
+        <ConfigurationModal
+          isOpen={showBackupConfigModal}
+          onClose={() => setShowBackupConfigModal(false)}
+          type="Backup Server"
+          config={{
+            reportTitle: backupReportTitle,
+            reportDates: backupReportDates
+          }}
+          onSave={handleBackupConfigSave}
+          isDark={isDark}
+        />
       </div>
     </div>
   );

@@ -183,34 +183,6 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           })}
         </nav>
 
-        {/* Quick Stats */}
-        {(!isCollapsed || isMobileMenuOpen) && (
-          <div className={`p-4 border-t ${
-            isDark ? 'border-gray-700' : 'border-gray-200'
-          }`}>
-            <h3 className={`text-xs font-semibold uppercase tracking-wider mb-3 ${
-              isDark ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              Quick Stats
-            </h3>
-            <div className="grid grid-cols-3 gap-3">
-              {quickStats.map((stat, index) => (
-                <div key={index} className={`text-center p-3 rounded-xl transition-colors ${
-                  isDark ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'
-                }`}>
-                  <p className={`text-xl font-bold ${stat.color}`}>
-                    {stat.value}
-                  </p>
-                  <p className={`text-xs ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Footer */}
         <div className={`p-4 border-t ${
@@ -221,12 +193,12 @@ const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               <p className={`text-sm font-medium ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                BizTras Cloud Management
+                BizTras Cloud 
               </p>
               <p className={`text-xs ${
                 isDark ? 'text-gray-500' : 'text-gray-500'
               }`}>
-                v1.0.0
+                v1.0
               </p>
             </div>
           ) : (

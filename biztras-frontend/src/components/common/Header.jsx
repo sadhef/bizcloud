@@ -137,7 +137,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                         <p className={`text-sm ${
                           isDark ? 'text-gray-300' : 'text-gray-700'
                         }`}>
-                          Welcome to BizTras Cloud Management Platform!
+                          Welcome to BizTras Cloud  Platform!
                         </p>
                         <p className={`text-xs mt-1 ${
                           isDark ? 'text-gray-400' : 'text-gray-500'
