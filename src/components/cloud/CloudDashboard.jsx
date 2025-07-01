@@ -1,3 +1,4 @@
+// src/components/cloud/CloudDashboard.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -8,21 +9,16 @@ import {
   FiTrash2, 
   FiDownload, 
   FiEye, 
-  FiPrinter, 
-  FiArrowLeft, 
   FiSave,
   FiRefreshCw,
   FiSettings,
-  FiCalendar,
-  FiEdit3,
   FiCheck,
   FiX,
   FiMove
 } from 'react-icons/fi';
 import api from '../../services/api';
 import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import CloudPrintPreview from './CloudPrintPreview';
 
 // Drag and Drop Column Component
 const DraggableColumn = ({ column, index, onRemove, onDragStart, onDragOver, onDrop, isDark, isBeingDragged }) => {
@@ -339,248 +335,6 @@ const ConfigurationModal = ({
   );
 };
 
-// Helper functions
-const formatDate = (date) => {
-  if (!date) return '';
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
-
-// Print Preview Component
-const CloudPrintPreview = ({ cloudData, backupData }) => {
-  const navigate = useNavigate();
-  const { isDark } = useTheme();
-
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    
-    const logoCanvas = document.createElement('canvas');
-    const logoImg = new Image();
-    logoImg.crossOrigin = 'anonymous';
-    
-    logoImg.onload = function() {
-      logoCanvas.width = this.width;
-      logoCanvas.height = this.height;
-      const ctx = logoCanvas.getContext('2d');
-      ctx.drawImage(this, 0, 0);
-      const logoBase64 = logoCanvas.toDataURL();
-      
-      generatePrintContent(logoBase64);
-    };
-    
-    logoImg.onerror = function() {
-      generatePrintContent(null);
-    };
-    
-    logoImg.src = './biztras.png';
-    
-    setTimeout(() => {
-      if (!logoImg.complete) {
-        generatePrintContent(null);
-      }
-    }, 2000);
-
-    function generatePrintContent(logoBase64) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Cloud Infrastructure Status Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #000; background: #fff; }
-            .report-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 15px; }
-            .logo { width: 120px; height: auto; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; }
-            .report-title { font-size: 28px; font-weight: bold; margin-bottom: 10px; color: #000; }
-            .report-subtitle { font-size: 18px; margin-bottom: 8px; color: #333; }
-            .report-date { font-size: 14px; margin-bottom: 5px; color: #666; }
-            .total-space { font-size: 16px; margin-top: 10px; font-weight: bold; color: #333; }
-            .section-header { font-size: 20px; font-weight: bold; margin: 30px 0 15px 0; padding: 8px 12px; background-color: #f0f0f0; border-left: 4px solid #333; }
-            .report-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 10px; }
-            .report-table th, .report-table td { border: 1px solid #000; padding: 6px 4px; text-align: left; vertical-align: top; }
-            .report-table th { background-color: #e0e0e0; font-weight: bold; text-transform: uppercase; font-size: 9px; }
-            .report-footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; border-top: 1px solid #ccc; padding-top: 15px; }
-            @page { size: A4 landscape; margin: 15mm; }
-            @media print { body { margin: 0; } .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="report-header">
-            ${logoBase64 ? `<img src="${logoBase64}" alt="BizTras Logo" class="logo" />` : ''}
-            <div class="report-title">Cloud Infrastructure Status Report</div>
-            <div class="report-subtitle">${cloudData.reportTitle || 'Cloud Status Report'}</div>
-            <div class="report-subtitle">${backupData.reportTitle || 'Backup Server Cronjob Status'}</div>
-            <div class="report-date">Cloud Services: ${formatDate(cloudData.reportDates?.startDate)} - ${formatDate(cloudData.reportDates?.endDate)}</div>
-            <div class="report-date">Backup Servers: ${formatDate(backupData.reportDates?.startDate)} - ${formatDate(backupData.reportDates?.endDate)}</div>
-            ${cloudData.totalSpaceUsed ? `<div class="total-space">Total Space Used: ${cloudData.totalSpaceUsed}</div>` : ''}
-          </div>
-          
-          <div class="section-header">☁️ ${cloudData.reportTitle || 'Cloud Services Status'}</div>
-          <table class="report-table">
-            <thead>
-              <tr>
-                ${cloudData.columns.map(col => `<th>${col}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${cloudData.rows.map(row => `
-                <tr>
-                  ${cloudData.columns.map(column => {
-                    const value = row[column] || '';
-                    return `<td>${value}</td>`;
-                  }).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="section-header">🗄️ ${backupData.reportTitle || 'Backup Server Cronjob Status'}</div>
-          <table class="report-table">
-            <thead>
-              <tr>
-                ${backupData.columns.map(col => `<th>${col}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${backupData.rows.map(row => `
-                <tr>
-                  ${backupData.columns.map(column => {
-                    const value = row[column] || '';
-                    return `<td>${value}</td>`;
-                  }).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="report-footer">
-            <p>Generated on ${new Date().toLocaleString()}</p>
-            <p>Cloud Services: ${cloudData.rows.length} | Backup Servers: ${backupData.rows.length}</p>
-            ${cloudData.totalSpaceUsed ? `<p>Total Space Used: ${cloudData.totalSpaceUsed}</p>` : ''}
-          </div>
-          
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-                window.close();
-              }, 500);
-            };
-          </script>
-        </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
-  };
-
-  return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} py-6`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
-          <button
-            onClick={() => navigate('/cloud-dashboard')}
-            className="btn btn-secondary"
-          >
-            <FiArrowLeft className="mr-2" />
-            Back to Edit
-          </button>
-          
-          <button
-            onClick={handlePrint}
-            className="btn btn-primary"
-          >
-            <FiPrinter className="mr-2" />
-            Print Report
-          </button>
-        </div>
-
-        <div className={`card overflow-hidden ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
-          <div className="text-center py-8 px-6 border-b border-gray-200 dark:border-gray-700">
-            <img 
-              src="./biztras.png" 
-              alt="BizTras Logo" 
-              className="w-24 h-24 mx-auto mb-4 rounded-lg"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Cloud Infrastructure Status Report</h1>
-            <h2 className="text-lg sm:text-xl font-semibold mb-2">{cloudData.reportTitle || 'Cloud Status Report'}</h2>
-            <h3 className="text-lg sm:text-xl font-semibold mb-4">{backupData.reportTitle || 'Backup Server Cronjob Status'}</h3>
-          </div>
-
-          <div className="p-4 sm:p-6">
-            <h3 className="text-lg sm:text-xl font-bold mb-4">☁️ {cloudData.reportTitle || 'Cloud Services Status'}</h3>
-            <div className="overflow-x-auto mb-8">
-              <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
-                  <tr>
-                    {cloudData.columns.map((column, index) => (
-                      <th
-                        key={index}
-                        className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDark ? 'text-gray-300' : 'text-gray-500'
-                        }`}
-                      >
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
-                  {cloudData.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {cloudData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                          {row[column] || 'N/A'}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <h3 className="text-lg sm:text-xl font-bold mb-4">🗄️ {backupData.reportTitle || 'Backup Server Cronjob Status'}</h3>
-            <div className="overflow-x-auto">
-              <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
-                  <tr>
-                    {backupData.columns.map((column, index) => (
-                      <th
-                        key={index}
-                        className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDark ? 'text-gray-300' : 'text-gray-500'
-                        }`}
-                      >
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
-                  {backupData.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {backupData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
-                          {row[column] || 'N/A'}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // Export Dropdown Component
 const ExportDropdown = ({ reportData, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -687,6 +441,16 @@ const ExportDropdown = ({ reportData, disabled = false }) => {
       )}
     </div>
   );
+};
+
+// Helper functions
+const formatDate = (date) => {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 };
 
 // Main Cloud Dashboard Component
@@ -1550,5 +1314,3 @@ const CloudDashboard = () => {
 };
 
 export default CloudDashboard;
-
-  
