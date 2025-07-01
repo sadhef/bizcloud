@@ -6,14 +6,13 @@ import { toast } from 'react-toastify';
 import { 
   FiPlus, 
   FiTrash2, 
-  FiDownload, 
   FiEye, 
   FiSave,
   FiRefreshCw,
   FiSettings,
-  FiCheck,
   FiX,
-  FiMove
+  FiMove,
+  FiAlertTriangle
 } from 'react-icons/fi';
 import api from '../../services/api';
 import CloudPrintPreview from './CloudPrintPreview';
@@ -51,7 +50,7 @@ const DraggableColumn = ({ column, index, onRemove, onDragStart, onDragOver, onD
   );
 };
 
-// Enhanced Status Select Component with Server Status Support
+// Enhanced Status Select Component
 const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false, isServerStatus = false }) => {
   const getBackgroundColor = (val) => {
     if (!val) return isDark ? '#374151' : '#ffffff';
@@ -60,48 +59,34 @@ const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false, is
     
     if (isServerStatus) {
       switch (normalizedVal) {
-        case 'ONLINE':
-          return '#10b981';
-        case 'OFFLINE':
-          return '#ef4444';
-        default:
-          return isDark ? '#374151' : '#ffffff';
+        case 'ONLINE': return '#10b981';
+        case 'OFFLINE': return '#ef4444';
+        default: return isDark ? '#374151' : '#ffffff';
       }
     } else if (isCloudStatus) {
       switch (normalizedVal) {
         case 'AUTOMATIC':
-        case 'ONLINE':
-          return '#10b981';
+        case 'ONLINE': return '#10b981';
         case 'MANUAL':
-        case 'MAINTENANCE':
-          return '#f59e0b';
+        case 'MAINTENANCE': return '#f59e0b';
         case 'FAILED':
-        case 'OFFLINE':
-          return '#ef4444';
-        case 'IN PROGRESS':
-          return '#3b82f6';
-        case 'N/A':
-          return '#6b7280';
-        default:
-          return isDark ? '#374151' : '#ffffff';
+        case 'OFFLINE': return '#ef4444';
+        case 'IN PROGRESS': return '#3b82f6';
+        case 'N/A': return '#6b7280';
+        default: return isDark ? '#374151' : '#ffffff';
       }
     } else {
       switch (normalizedVal) {
-        case 'RUNNING':
-          return '#10b981';
-        case 'NOT RUNNING':
-          return '#ef4444';
-        case 'N/A':
-          return '#6b7280';
-        default:
-          return isDark ? '#374151' : '#ffffff';
+        case 'RUNNING': return '#10b981';
+        case 'NOT RUNNING': return '#ef4444';
+        case 'N/A': return '#6b7280';
+        default: return isDark ? '#374151' : '#ffffff';
       }
     }
   };
 
   const getTextColor = (val) => {
     if (!val) return isDark ? '#ffffff' : '#000000';
-    
     const normalizedVal = val.toUpperCase();
     if (normalizedVal === 'MANUAL' || normalizedVal === 'MAINTENANCE') {
       return '#000000';
@@ -123,82 +108,41 @@ const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false, is
         transition: 'all 0.2s ease-in-out'
       }}
       className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-center transition-all duration-200 ${
-        isDark 
-          ? 'border-gray-600' 
-          : 'border-gray-300'
+        isDark ? 'border-gray-600' : 'border-gray-300'
       }`}
     >
       {isServerStatus ? (
         <>
-          <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            Select Status
-          </option>
-          <option value="ONLINE" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>
-            ONLINE
-          </option>
-          <option value="OFFLINE" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
-            OFFLINE
-          </option>
+          <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>Select Status</option>
+          <option value="ONLINE" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>ONLINE</option>
+          <option value="OFFLINE" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>OFFLINE</option>
         </>
       ) : isCloudStatus ? (
         <>
-          <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            Select Status
-          </option>
-          <option value="AUTOMATIC" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>
-            AUTOMATIC
-          </option>
-          <option value="MANUAL" style={{ backgroundColor: '#f59e0b', color: '#000000' }}>
-            MANUAL
-          </option>
-          <option value="FAILED" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
-            FAILED
-          </option>
-          <option value="IN PROGRESS" style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}>
-            IN PROGRESS
-          </option>
-          <option value="ONLINE" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>
-            ONLINE
-          </option>
-          <option value="MAINTENANCE" style={{ backgroundColor: '#f59e0b', color: '#000000' }}>
-            MAINTENANCE
-          </option>
-          <option value="OFFLINE" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
-            OFFLINE
-          </option>
-          <option value="N/A" style={{ backgroundColor: '#6b7280', color: '#ffffff' }}>
-            N/A
-          </option>
+          <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>Select Status</option>
+          <option value="AUTOMATIC" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>AUTOMATIC</option>
+          <option value="MANUAL" style={{ backgroundColor: '#f59e0b', color: '#000000' }}>MANUAL</option>
+          <option value="FAILED" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>FAILED</option>
+          <option value="IN PROGRESS" style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}>IN PROGRESS</option>
+          <option value="ONLINE" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>ONLINE</option>
+          <option value="MAINTENANCE" style={{ backgroundColor: '#f59e0b', color: '#000000' }}>MAINTENANCE</option>
+          <option value="OFFLINE" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>OFFLINE</option>
+          <option value="N/A" style={{ backgroundColor: '#6b7280', color: '#ffffff' }}>N/A</option>
         </>
       ) : (
         <>
-          <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
-            Select Status
-          </option>
-          <option value="RUNNING" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>
-            RUNNING
-          </option>
-          <option value="NOT RUNNING" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
-            NOT RUNNING
-          </option>
-          <option value="N/A" style={{ backgroundColor: '#6b7280', color: '#ffffff' }}>
-            N/A
-          </option>
+          <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>Select Status</option>
+          <option value="RUNNING" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>RUNNING</option>
+          <option value="NOT RUNNING" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>NOT RUNNING</option>
+          <option value="N/A" style={{ backgroundColor: '#6b7280', color: '#ffffff' }}>N/A</option>
         </>
       )}
     </select>
   );
 };
 
-// Configuration Edit Modal Component
-const ConfigurationModal = ({ 
-  isOpen, 
-  onClose, 
-  type, 
-  config, 
-  onSave, 
-  isDark 
-}) => {
+// Configuration Modal Component
+const ConfigurationModal = ({ isOpen, onClose, type, config, onSave, isDark }) => {
   const [formData, setFormData] = useState(config);
   const [saving, setSaving] = useState(false);
 
@@ -245,9 +189,7 @@ const ConfigurationModal = ({
 
           <div className="space-y-4">
             <div className="form-group">
-              <label className="form-label">
-                Report Title
-              </label>
+              <label className="form-label">Report Title</label>
               <input
                 type="text"
                 value={formData.reportTitle || ''}
@@ -259,9 +201,7 @@ const ConfigurationModal = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="form-group">
-                <label className="form-label">
-                  Start Date
-                </label>
+                <label className="form-label">Start Date</label>
                 <input
                   type="date"
                   value={formData.reportDates?.startDate || ''}
@@ -277,9 +217,7 @@ const ConfigurationModal = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label">
-                  End Date
-                </label>
+                <label className="form-label">End Date</label>
                 <input
                   type="date"
                   value={formData.reportDates?.endDate || ''}
@@ -297,9 +235,7 @@ const ConfigurationModal = ({
 
             {type === 'Cloud Service' && (
               <div className="form-group">
-                <label className="form-label">
-                  Total Space Used
-                </label>
+                <label className="form-label">Total Space Used</label>
                 <input
                   type="text"
                   value={formData.totalSpaceUsed || ''}
@@ -355,7 +291,7 @@ const CloudDashboard = () => {
   });
   const [cloudTotalSpaceUsed, setCloudTotalSpaceUsed] = useState('');
 
-  // Backup Data State with SERVER STATUS column included
+  // Backup Data State
   const [backupColumns, setBackupColumns] = useState(['Server', 'SERVER STATUS', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks']);
   const [backupRows, setBackupRows] = useState([]);
   const [backupReportTitle, setBackupReportTitle] = useState('Backup Server Cronjob Status');
@@ -367,6 +303,7 @@ const CloudDashboard = () => {
   // Common State
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeTab, setActiveTab] = useState('cloud');
@@ -394,11 +331,94 @@ const CloudDashboard = () => {
   // Check if we're in preview mode
   const isPreviewMode = new URLSearchParams(location.search).get('preview') === 'true';
 
-  // Auto-save function with debouncing
+  // Simple fetch data function
+  const fetchData = useCallback(async (showLoadingState = true) => {
+    try {
+      if (showLoadingState) {
+        setLoading(true);
+      }
+      setError(null);
+      
+      console.log('Fetching fresh data...');
+      
+      // Clear any pending auto-save before fetching
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
+      // Fetch both datasets
+      const [cloudResponse, backupResponse] = await Promise.all([
+        api.get('/cloud-report/data'),
+        api.get('/backup-server/data')
+      ]);
+      
+      // Process cloud data
+      if (cloudResponse?.data) {
+        const cloudData = cloudResponse.data;
+        console.log('Cloud data received:', { 
+          rowsCount: cloudData.rows?.length || 0, 
+          columnsCount: cloudData.columns?.length || 0
+        });
+        
+        setCloudReportTitle(cloudData.reportTitle || 'Cloud Status Report');
+        
+        const cloudDates = cloudData.reportDates || {};
+        setCloudReportDates({
+          startDate: cloudDates.startDate ? new Date(cloudDates.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          endDate: cloudDates.endDate ? new Date(cloudDates.endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        });
+        
+        setCloudColumns(cloudData.columns || ['Server', 'Status', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'SSL Expiry', 'Space Used', 'Remarks']);
+        setCloudRows(cloudData.rows || []);
+        setCloudTotalSpaceUsed(cloudData.totalSpaceUsed || '');
+        setLastUpdated(cloudData.updatedAt);
+      }
+
+      // Process backup data
+      if (backupResponse?.data) {
+        const backupData = backupResponse.data;
+        console.log('Backup data received:', { 
+          rowsCount: backupData.rows?.length || 0, 
+          columnsCount: backupData.columns?.length || 0
+        });
+        
+        setBackupReportTitle(backupData.reportTitle || 'Backup Server Cronjob Status');
+        
+        const backupDates = backupData.reportDates || {};
+        setBackupReportDates({
+          startDate: backupDates.startDate ? new Date(backupDates.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          endDate: backupDates.endDate ? new Date(backupDates.endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        });
+        
+        const defaultBackupColumns = ['Server', 'SERVER STATUS', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks'];
+        setBackupColumns(backupData.columns || defaultBackupColumns);
+        setBackupRows(backupData.rows || []);
+      }
+      
+      setHasUnsavedChanges(false);
+      console.log('Data fetch completed successfully');
+      
+    } catch (err) {
+      console.error('Error fetching cloud dashboard data:', err);
+      setError('Failed to load dashboard data');
+      toast.error('Failed to load dashboard data');
+    } finally {
+      if (showLoadingState) {
+        setLoading(false);
+      }
+      setRefreshing(false);
+    }
+  }, []);
+
+  // Simple auto-save function
   const autoSave = useCallback(async () => {
-    if (!hasUnsavedChanges) return;
+    if (!hasUnsavedChanges || saveLoading || loading) {
+      return;
+    }
     
     try {
+      console.log('Auto-saving data...');
+      
       const cloudPayload = {
         reportTitle: cloudReportTitle,
         reportDates: cloudReportDates,
@@ -422,11 +442,15 @@ const CloudDashboard = () => {
       setHasUnsavedChanges(false);
       setLastUpdated(new Date().toISOString());
       console.log('Auto-saved successfully');
+      
     } catch (err) {
       console.error('Auto-save failed:', err);
+      // Don't show error toast for auto-save failures
     }
   }, [
     hasUnsavedChanges,
+    saveLoading,
+    loading,
     cloudReportTitle,
     cloudReportDates,
     cloudColumns,
@@ -438,7 +462,7 @@ const CloudDashboard = () => {
     backupRows
   ]);
 
-  // Debounced auto-save
+  // Simple debounced auto-save
   const debouncedAutoSave = useCallback(() => {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
@@ -446,14 +470,134 @@ const CloudDashboard = () => {
     
     autoSaveTimeoutRef.current = setTimeout(() => {
       autoSave();
-    }, 2000); // Auto-save after 2 seconds of inactivity
+    }, 2000); // 2 seconds delay
   }, [autoSave]);
 
   // Mark as changed and trigger auto-save
   const markAsChanged = useCallback(() => {
-    setHasUnsavedChanges(true);
+    if (!hasUnsavedChanges) {
+      setHasUnsavedChanges(true);
+    }
     debouncedAutoSave();
-  }, [debouncedAutoSave]);
+  }, [hasUnsavedChanges, debouncedAutoSave]);
+
+  // MAIN FIX: Enhanced manual save with data refresh
+  const saveData = async () => {
+    try {
+      setSaveLoading(true);
+      
+      // Clear any pending auto-save
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
+      console.log('Manual save initiated...');
+      
+      const cloudPayload = {
+        reportTitle: cloudReportTitle,
+        reportDates: cloudReportDates,
+        columns: cloudColumns,
+        rows: cloudRows,
+        totalSpaceUsed: cloudTotalSpaceUsed
+      };
+      
+      const backupPayload = {
+        reportTitle: backupReportTitle,
+        reportDates: backupReportDates,
+        columns: backupColumns,
+        rows: backupRows
+      };
+      
+      // Save data
+      await Promise.all([
+        api.post('/cloud-report/save', cloudPayload),
+        api.post('/backup-server/save', backupPayload)
+      ]);
+      
+      console.log('Data saved successfully, refreshing...');
+      
+      // CRITICAL: Fetch fresh data after save to ensure UI shows latest server data
+      await fetchData(false); // Don't show loading state for this refresh
+      
+      toast.success('Data saved and refreshed successfully!');
+      setHasUnsavedChanges(false);
+      return true;
+      
+    } catch (err) {
+      console.error('Error saving cloud dashboard data:', err);
+      toast.error('Failed to save dashboard data');
+      return false;
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Force refresh function
+  const forceRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setError(null);
+    
+    try {
+      // Clear any pending operations
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      
+      console.log('Force refresh initiated...');
+      await fetchData(true); // Force fresh fetch with loading state
+      toast.success('Data refreshed successfully!');
+      
+    } catch (error) {
+      console.error('Force refresh failed:', error);
+      toast.error('Failed to refresh data');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchData]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Visibility change handler - refresh when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !loading && !saveLoading) {
+        console.log('Tab became visible, refreshing data...');
+        fetchData(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchData, loading, saveLoading]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Configuration handlers
+  const handleCloudConfigSave = async (config) => {
+    setCloudReportTitle(config.reportTitle);
+    setCloudReportDates(config.reportDates);
+    setCloudTotalSpaceUsed(config.totalSpaceUsed);
+    markAsChanged();
+  };
+
+  const handleBackupConfigSave = async (config) => {
+    setBackupReportTitle(config.reportTitle);
+    setBackupReportDates(config.reportDates);
+    markAsChanged();
+  };
 
   // Drag and drop handlers for Cloud columns
   const handleCloudColumnDragStart = (e, index) => {
@@ -477,10 +621,7 @@ const CloudDashboard = () => {
     const newColumns = [...cloudColumns];
     const draggedColumn = newColumns[draggedCloudIndex];
     
-    // Remove the dragged item
     newColumns.splice(draggedCloudIndex, 1);
-    
-    // Insert at new position
     newColumns.splice(dropIndex, 0, draggedColumn);
     
     setCloudColumns(newColumns);
@@ -512,10 +653,7 @@ const CloudDashboard = () => {
     const newColumns = [...backupColumns];
     const draggedColumn = newColumns[draggedBackupIndex];
     
-    // Remove the dragged item
     newColumns.splice(draggedBackupIndex, 1);
-    
-    // Insert at new position
     newColumns.splice(dropIndex, 0, draggedColumn);
     
     setBackupColumns(newColumns);
@@ -523,114 +661,6 @@ const CloudDashboard = () => {
     markAsChanged();
     
     toast.success('Backup columns reordered successfully!');
-  };
-
-  // Fetch both cloud and backup data
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch cloud data
-      const cloudResponse = await api.get('/cloud-report/data');
-      if (cloudResponse && cloudResponse.data) {
-        const { reportTitle, reportDates, columns, rows, totalSpaceUsed, updatedAt } = cloudResponse.data;
-        setCloudReportTitle(reportTitle || 'Cloud Status Report');
-        
-        const cloudDates = reportDates || {};
-        setCloudReportDates({
-          startDate: cloudDates.startDate ? new Date(cloudDates.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          endDate: cloudDates.endDate ? new Date(cloudDates.endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-        });
-        
-        setCloudColumns(columns || ['Server', 'Status', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'SSL Expiry', 'Space Used', 'Remarks']);
-        setCloudRows(rows || []);
-        setCloudTotalSpaceUsed(totalSpaceUsed || '');
-        setLastUpdated(updatedAt);
-      }
-
-      // Fetch backup data
-      const backupResponse = await api.get('/backup-server/data');
-      if (backupResponse && backupResponse.data) {
-        const { reportTitle, reportDates, columns, rows } = backupResponse.data;
-        setBackupReportTitle(reportTitle || 'Backup Server Cronjob Status');
-        
-        const backupDates = reportDates || {};
-        setBackupReportDates({
-          startDate: backupDates.startDate ? new Date(backupDates.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          endDate: backupDates.endDate ? new Date(backupDates.endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-        });
-        
-        // Include SERVER STATUS column by default if not present
-        const defaultBackupColumns = ['Server', 'SERVER STATUS', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks'];
-        setBackupColumns(columns || defaultBackupColumns);
-        setBackupRows(rows || []);
-      }
-      
-      setHasUnsavedChanges(false);
-    } catch (err) {
-      console.error('Error fetching cloud dashboard data:', err);
-      setError('Failed to load dashboard data');
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Save both datasets manually
-  const saveData = async () => {
-    try {
-      setSaveLoading(true);
-      
-      const cloudPayload = {
-        reportTitle: cloudReportTitle,
-        reportDates: cloudReportDates,
-        columns: cloudColumns,
-        rows: cloudRows,
-        totalSpaceUsed: cloudTotalSpaceUsed
-      };
-      
-      const backupPayload = {
-        reportTitle: backupReportTitle,
-        reportDates: backupReportDates,
-        columns: backupColumns,
-        rows: backupRows
-      };
-      
-      await Promise.all([
-        api.post('/cloud-report/save', cloudPayload),
-        api.post('/backup-server/save', backupPayload)
-      ]);
-      
-      toast.success('Cloud dashboard data saved successfully!');
-      setLastUpdated(new Date().toISOString());
-      setHasUnsavedChanges(false);
-      return true;
-    } catch (err) {
-      console.error('Error saving cloud dashboard data:', err);
-      toast.error('Failed to save dashboard data');
-      return false;
-    } finally {
-      setSaveLoading(false);
-    }
-  };
-
-  // Handle configuration updates
-  const handleCloudConfigSave = async (config) => {
-    setCloudReportTitle(config.reportTitle);
-    setCloudReportDates(config.reportDates);
-    setCloudTotalSpaceUsed(config.totalSpaceUsed);
-    markAsChanged();
-  };
-
-  const handleBackupConfigSave = async (config) => {
-    setBackupReportTitle(config.reportTitle);
-    setBackupReportDates(config.reportDates);
-    markAsChanged();
   };
 
   // Cloud Column Management
@@ -741,10 +771,12 @@ const CloudDashboard = () => {
   // Toggle preview mode
   const togglePreviewMode = () => {
     if (!isPreviewMode) {
-      // Auto-save before preview
       if (hasUnsavedChanges) {
-        autoSave().then(() => {
-          navigate('/cloud-dashboard?preview=true');
+        console.log('Saving before preview...');
+        saveData().then((success) => {
+          if (success) {
+            navigate('/cloud-dashboard?preview=true');
+          }
         });
       } else {
         navigate('/cloud-dashboard?preview=true');
@@ -756,8 +788,7 @@ const CloudDashboard = () => {
 
   // Prepare report data for preview
   const getReportData = () => {
-    return {
-      cloudData: {
+    return {cloudData: {
         reportTitle: cloudReportTitle,
         reportDates: cloudReportDates,
         columns: cloudColumns,
@@ -844,15 +875,6 @@ const CloudDashboard = () => {
     }
   };
 
-  // Cleanup auto-save timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Render preview mode
   if (isPreviewMode) {
     const reportData = getReportData();
@@ -889,18 +911,26 @@ const CloudDashboard = () => {
             <p className={`mt-2 text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
               Manage cloud services and backup server configurations
             </p>
-            {hasUnsavedChanges && (
-              <p className={`mt-1 text-sm ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
-                ● Unsaved changes (auto-saving...)
-              </p>
-            )}
+            <div className="flex items-center space-x-4 mt-2">
+              {hasUnsavedChanges && (
+                <p className={`text-sm flex items-center ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                  <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></span>
+                  Unsaved changes (auto-saving...)
+                </p>
+              )}
+              {lastUpdated && (
+                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Last updated: {new Date(lastUpdated).toLocaleString()}
+                </p>
+              )}
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            
             <button
               onClick={togglePreviewMode}
               className="btn btn-secondary"
+              disabled={saveLoading}
             >
               <FiEye className="mr-2" />
               Preview & Print
@@ -916,12 +946,12 @@ const CloudDashboard = () => {
             </button>
             
             <button
-              onClick={fetchData}
-              disabled={loading}
+              onClick={forceRefresh}
+              disabled={loading || refreshing}
               className="btn btn-secondary"
             >
-              <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              <FiRefreshCw className={`mr-2 ${(loading || refreshing) ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
         </div>
@@ -929,7 +959,20 @@ const CloudDashboard = () => {
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-error-50 border border-error-200 text-error-700 dark:bg-error-900/20 dark:border-error-800 dark:text-error-400">
-            {error}
+            <div className="flex items-center">
+              <FiAlertTriangle className="mr-2 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium">Connection Error</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
+              <button
+                onClick={forceRefresh}
+                className="ml-4 btn btn-sm btn-secondary"
+                disabled={refreshing}
+              >
+                Retry
+              </button>
+            </div>
           </div>
         )}
 
@@ -992,7 +1035,7 @@ const CloudDashboard = () => {
               </div>
             </div>
 
-            {/* Cloud Column Management with Drag & Drop */}
+            {/* Cloud Column Management */}
             <div className="card p-4 sm:p-6">
               <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Cloud Service Columns
@@ -1142,7 +1185,7 @@ const CloudDashboard = () => {
               </div>
             </div>
 
-            {/* Backup Column Management with Drag & Drop */}
+            {/* Backup Column Management */}
             <div className="card p-4 sm:p-6">
               <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Backup Server Columns
@@ -1219,8 +1262,7 @@ const CloudDashboard = () => {
                       {backupColumns.map((column, index) => (
                         <th
                           key={index}
-                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'
-                          }`}
+                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}
                         >
                           {column}
                         </th>
@@ -1264,13 +1306,6 @@ const CloudDashboard = () => {
                 </table>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Footer Info */}
-        {lastUpdated && (
-          <div className={`text-center text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-8`}>
-            Last updated: {new Date(lastUpdated).toLocaleString()}
           </div>
         )}
 

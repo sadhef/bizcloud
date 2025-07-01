@@ -1,5 +1,5 @@
-const CACHE_NAME = 'biztras-cloud-v2.0.0';
-const RUNTIME_CACHE = 'biztras-runtime-v1';
+const CACHE_NAME = 'biztras-cloud-v2.1.0';
+const RUNTIME_CACHE = 'biztras-runtime-v2';
 const OFFLINE_PAGE = '/offline.html';
 
 // Core files to cache
@@ -13,11 +13,17 @@ const CORE_CACHE_FILES = [
   '/biztras.png'
 ];
 
-// API endpoints to cache
-const API_CACHE_PATTERNS = [
-  /^\/api\/auth\/verify$/,
+// API endpoints that should have very short cache times
+const SHORT_CACHE_API_PATTERNS = [
   /^\/api\/cloud-report\/data$/,
-  /^\/api\/backup-server\/data$/
+  /^\/api\/backup-server\/data$/,
+  /^\/api\/auth\/verify$/
+];
+
+// API endpoints that can be cached longer
+const LONG_CACHE_API_PATTERNS = [
+  /^\/api\/admin\/stats$/,
+  /^\/api\/admin\/pending-users$/
 ];
 
 // Install event - cache core resources
@@ -69,7 +75,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - implement caching strategies
+// Fetch event - implement enhanced caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -96,18 +102,29 @@ async function handleFetch(request) {
       return await cacheFirst(request, CACHE_NAME);
     }
     
-    // Strategy 2: API calls - Network First with cache fallback
-    if (url.pathname.startsWith('/api/')) {
-      return await networkFirst(request, RUNTIME_CACHE);
+    // Strategy 2: Short cache API calls - Network First with very short cache
+    if (url.pathname.startsWith('/api/') && SHORT_CACHE_API_PATTERNS.some(pattern => pattern.test(url.pathname))) {
+      return await networkFirstShortCache(request, RUNTIME_CACHE);
     }
     
-    // Strategy 3: Static assets - Cache First
+    // Strategy 3: Long cache API calls - Network First with longer cache
+    if (url.pathname.startsWith('/api/') && LONG_CACHE_API_PATTERNS.some(pattern => pattern.test(url.pathname))) {
+      return await networkFirstLongCache(request, RUNTIME_CACHE);
+    }
+    
+    // Strategy 4: Other API calls - Network Only (no cache for save operations)
+    if (url.pathname.startsWith('/api/')) {
+      console.log('[SW] Network only for API:', request.url);
+      return await fetch(request);
+    }
+    
+    // Strategy 5: Static assets - Cache First
     if (url.pathname.startsWith('/static/') || 
         url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$/)) {
       return await cacheFirst(request, CACHE_NAME);
     }
     
-    // Strategy 4: Navigation - Network First with offline fallback
+    // Strategy 6: Navigation - Network First with offline fallback
     if (request.mode === 'navigate') {
       return await navigationHandler(request);
     }
@@ -148,16 +165,28 @@ async function cacheFirst(request, cacheName) {
   return response;
 }
 
-// Network First strategy
-async function networkFirst(request, cacheName) {
+// Network First with short cache (30 seconds)
+async function networkFirstShortCache(request, cacheName) {
   const cache = await caches.open(cacheName);
   
   try {
-    console.log('[SW] Network first:', request.url);
+    console.log('[SW] Network first (short cache):', request.url);
     const response = await fetch(request);
     
     if (response.status === 200) {
-      cache.put(request, response.clone());
+      // Add timestamp to response headers
+      const responseToCache = response.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.set('sw-cache-timestamp', Date.now().toString());
+      headers.set('sw-cache-type', 'short');
+      
+      const modifiedResponse = new Response(responseToCache.body, {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers: headers
+      });
+      
+      cache.put(request, modifiedResponse);
     }
     
     return response;
@@ -166,6 +195,71 @@ async function networkFirst(request, cacheName) {
     const cached = await cache.match(request);
     
     if (cached) {
+      const cacheTimestamp = cached.headers.get('sw-cache-timestamp');
+      const cacheType = cached.headers.get('sw-cache-type');
+      
+      if (cacheTimestamp && cacheType === 'short') {
+        const isStale = (Date.now() - parseInt(cacheTimestamp)) > 30000; // 30 seconds
+        
+        if (isStale) {
+          console.log('[SW] Cache is stale, removing:', request.url);
+          cache.delete(request);
+          throw error; // Don't use stale cache
+        }
+      }
+      
+      console.log('[SW] Using cached response:', request.url);
+      return cached;
+    }
+    
+    throw error;
+  }
+}
+
+// Network First with long cache (5 minutes)
+async function networkFirstLongCache(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  
+  try {
+    console.log('[SW] Network first (long cache):', request.url);
+    const response = await fetch(request);
+    
+    if (response.status === 200) {
+      // Add timestamp to response headers
+      const responseToCache = response.clone();
+      const headers = new Headers(responseToCache.headers);
+      headers.set('sw-cache-timestamp', Date.now().toString());
+      headers.set('sw-cache-type', 'long');
+      
+      const modifiedResponse = new Response(responseToCache.body, {
+        status: responseToCache.status,
+        statusText: responseToCache.statusText,
+        headers: headers
+      });
+      
+      cache.put(request, modifiedResponse);
+    }
+    
+    return response;
+  } catch (error) {
+    console.log('[SW] Network failed, trying cache:', request.url);
+    const cached = await cache.match(request);
+    
+    if (cached) {
+      const cacheTimestamp = cached.headers.get('sw-cache-timestamp');
+      const cacheType = cached.headers.get('sw-cache-type');
+      
+      if (cacheTimestamp && cacheType === 'long') {
+        const isStale = (Date.now() - parseInt(cacheTimestamp)) > 300000; // 5 minutes
+        
+        if (isStale) {
+          console.log('[SW] Cache is stale, removing:', request.url);
+          cache.delete(request);
+          throw error; // Don't use stale cache
+        }
+      }
+      
+      console.log('[SW] Using cached response:', request.url);
       return cached;
     }
     
@@ -185,6 +279,35 @@ async function navigationHandler(request) {
   }
 }
 
+// Clean up stale cache entries periodically
+async function cleanupStaleCache() {
+  try {
+    const cache = await caches.open(RUNTIME_CACHE);
+    const requests = await cache.keys();
+    const now = Date.now();
+    
+    for (const request of requests) {
+      const response = await cache.match(request);
+      if (response) {
+        const cacheTimestamp = response.headers.get('sw-cache-timestamp');
+        const cacheType = response.headers.get('sw-cache-type');
+        
+        if (cacheTimestamp) {
+          const age = now - parseInt(cacheTimestamp);
+          const maxAge = cacheType === 'short' ? 30000 : 300000; // 30s or 5min
+          
+          if (age > maxAge) {
+            console.log('[SW] Cleaning up stale cache entry:', request.url);
+            await cache.delete(request);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[SW] Cache cleanup failed:', error);
+  }
+}
+
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync:', event.tag);
@@ -192,15 +315,29 @@ self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-cloud-data') {
     event.waitUntil(syncCloudData());
   }
+  
+  if (event.tag === 'cleanup-cache') {
+    event.waitUntil(cleanupStaleCache());
+  }
 });
 
 async function syncCloudData() {
   try {
-    // Get pending sync data from IndexedDB or localStorage
     console.log('[SW] Syncing cloud data...');
     
-    // Implementation would depend on your offline data strategy
-    // This is a placeholder for your sync logic
+    // Clear stale cache entries before sync
+    await cleanupStaleCache();
+    
+    // Notify all clients that sync is happening
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'SYNC_START',
+        message: 'Syncing latest data...'
+      });
+    });
+    
+    console.log('[SW] Cloud data sync completed');
     
   } catch (error) {
     console.error('[SW] Sync failed:', error);
@@ -252,7 +389,7 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-// Message handling from main thread
+// Enhanced message handling from main thread
 self.addEventListener('message', (event) => {
   console.log('[SW] Message received:', event.data);
   
@@ -263,6 +400,28 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'GET_VERSION') {
     event.ports[0].postMessage({ version: CACHE_NAME });
   }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      (async () => {
+        await cleanupStaleCache();
+        event.ports[0].postMessage({ success: true });
+      })()
+    );
+  }
+  
+  if (event.data && event.data.type === 'FORCE_REFRESH') {
+    event.waitUntil(
+      (async () => {
+        // Clear all runtime cache
+        const cache = await caches.open(RUNTIME_CACHE);
+        const requests = await cache.keys();
+        await Promise.all(requests.map(request => cache.delete(request)));
+        
+        event.ports[0].postMessage({ success: true });
+      })()
+    );
+  }
 });
 
 // Periodic background sync (if supported)
@@ -272,7 +431,16 @@ self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'sync-cloud-data') {
     event.waitUntil(syncCloudData());
   }
+  
+  if (event.tag === 'cleanup-cache') {
+    event.waitUntil(cleanupStaleCache());
+  }
 });
+
+// Regular cache cleanup every 10 minutes
+setInterval(() => {
+  cleanupStaleCache();
+}, 10 * 60 * 1000);
 
 // Error handling
 self.addEventListener('error', (event) => {
@@ -283,4 +451,4 @@ self.addEventListener('unhandledrejection', (event) => {
   console.error('[SW] Unhandled rejection:', event.reason);
 });
 
-console.log('[SW] Service Worker loaded successfully');
+console.log('[SW] Service Worker v2.1.0 loaded successfully with enhanced caching');
