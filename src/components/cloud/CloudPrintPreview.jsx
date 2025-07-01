@@ -1,4 +1,4 @@
-// src/components/cloud/CloudPrintPreview.jsx
+// src/components/cloud/CloudPrintPreview.jsx - WITHOUT STATUS LEGEND
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
@@ -337,30 +337,6 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               border-radius: 8px;
               padding: 20px;
             }
-            .status-legend {
-              margin: 20px 0;
-              padding: 15px;
-              background: #f9fafb;
-              border-radius: 8px;
-              border: 1px solid #e5e7eb;
-            }
-            .legend-title {
-              font-weight: bold;
-              margin-bottom: 10px;
-              color: #374151;
-            }
-            .legend-items {
-              display: flex;
-              flex-wrap: wrap;
-              gap: 10px;
-              align-items: center;
-            }
-            .legend-item {
-              display: flex;
-              align-items: center;
-              gap: 5px;
-              font-size: 11px;
-            }
             @page { 
               size: A4 landscape; 
               margin: 15mm; 
@@ -382,28 +358,6 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             <div class="report-date">Cloud Services: ${formatDate(cloudData.reportDates?.startDate)} - ${formatDate(cloudData.reportDates?.endDate)}</div>
             <div class="report-date">Backup Servers: ${formatDate(backupData.reportDates?.startDate)} - ${formatDate(backupData.reportDates?.endDate)}</div>
             ${cloudData.totalSpaceUsed ? `<div class="total-space">📊 Total Space Used: ${cloudData.totalSpaceUsed}</div>` : ''}
-          </div>
-          
-          <!-- Status Legend -->
-          <div class="status-legend">
-            <div class="legend-title">📋 Status Color Legend</div>
-            <div class="legend-items">
-              <div class="legend-item">
-                <span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">ONLINE/RUNNING/AUTOMATIC</span>
-              </div>
-              <div class="legend-item">
-                <span style="background: #f59e0b; color: black; padding: 4px 8px; border-radius: 4px; font-weight: bold;">MANUAL/MAINTENANCE</span>
-              </div>
-              <div class="legend-item">
-                <span style="background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">FAILED/OFFLINE/NOT RUNNING</span>
-              </div>
-              <div class="legend-item">
-                <span style="background: #3b82f6; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">IN PROGRESS</span>
-              </div>
-              <div class="legend-item">
-                <span style="background: #6b7280; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">N/A</span>
-              </div>
-            </div>
           </div>
           
           <div class="section-header">☁️ ${cloudData.reportTitle || 'Cloud Services Status'}</div>
@@ -510,40 +464,6 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                 <strong>Total Space Used:</strong> {cloudData.totalSpaceUsed}
               </div>
             )}
-          </div>
-
-          {/* Status Legend */}
-          <div className={`p-6 border-b border-gray-200 dark:border-gray-700 ${
-            isDark ? 'bg-gray-700/50' : 'bg-gray-50'
-          }`}>
-            <h3 className="text-lg font-semibold mb-4">Status Color Legend</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
-              <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 rounded-md bg-green-500 text-white font-bold text-xs">
-                  ONLINE/RUNNING
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 rounded-md bg-yellow-500 text-black font-bold text-xs">
-                  MANUAL/MAINTENANCE
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 rounded-md bg-red-500 text-white font-bold text-xs">
-                  FAILED/OFFLINE
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 rounded-md bg-blue-500 text-white font-bold text-xs">
-                  IN PROGRESS
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="px-3 py-1 rounded-md bg-gray-500 text-white font-bold text-xs">
-                  N/A
-                </span>
-              </div>
-            </div>
           </div>
 
           <div className="p-4 sm:p-6">

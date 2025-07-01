@@ -1,4 +1,4 @@
-// src/components/cloud/CloudDashboard.jsx
+// src/components/cloud/CloudDashboard.jsx - FIXED VERSION
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -480,6 +480,7 @@ const CloudDashboard = () => {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeTab, setActiveTab] = useState('cloud');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   // Column management states
   const [newCloudColumnName, setNewCloudColumnName] = useState('');
@@ -497,8 +498,72 @@ const CloudDashboard = () => {
   const location = useLocation();
   const { isDark } = useTheme();
 
+  // Auto-save timeout ref
+  const autoSaveTimeoutRef = useRef(null);
+
   // Check if we're in preview mode
   const isPreviewMode = new URLSearchParams(location.search).get('preview') === 'true';
+
+  // Auto-save function with debouncing
+  const autoSave = useCallback(async () => {
+    if (!hasUnsavedChanges) return;
+    
+    try {
+      const cloudPayload = {
+        reportTitle: cloudReportTitle,
+        reportDates: cloudReportDates,
+        columns: cloudColumns,
+        rows: cloudRows,
+        totalSpaceUsed: cloudTotalSpaceUsed
+      };
+      
+      const backupPayload = {
+        reportTitle: backupReportTitle,
+        reportDates: backupReportDates,
+        columns: backupColumns,
+        rows: backupRows
+      };
+      
+      await Promise.all([
+        api.post('/cloud-report/save', cloudPayload),
+        api.post('/backup-server/save', backupPayload)
+      ]);
+      
+      setHasUnsavedChanges(false);
+      setLastUpdated(new Date().toISOString());
+      console.log('Auto-saved successfully');
+    } catch (err) {
+      console.error('Auto-save failed:', err);
+    }
+  }, [
+    hasUnsavedChanges,
+    cloudReportTitle,
+    cloudReportDates,
+    cloudColumns,
+    cloudRows,
+    cloudTotalSpaceUsed,
+    backupReportTitle,
+    backupReportDates,
+    backupColumns,
+    backupRows
+  ]);
+
+  // Debounced auto-save
+  const debouncedAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSave();
+    }, 2000); // Auto-save after 2 seconds of inactivity
+  }, [autoSave]);
+
+  // Mark as changed and trigger auto-save
+  const markAsChanged = useCallback(() => {
+    setHasUnsavedChanges(true);
+    debouncedAutoSave();
+  }, [debouncedAutoSave]);
 
   // Drag and drop handlers for Cloud columns
   const handleCloudColumnDragStart = (e, index) => {
@@ -530,6 +595,7 @@ const CloudDashboard = () => {
     
     setCloudColumns(newColumns);
     setDraggedCloudIndex(null);
+    markAsChanged();
     
     toast.success('Cloud columns reordered successfully!');
   };
@@ -564,6 +630,7 @@ const CloudDashboard = () => {
     
     setBackupColumns(newColumns);
     setDraggedBackupIndex(null);
+    markAsChanged();
     
     toast.success('Backup columns reordered successfully!');
   };
@@ -609,6 +676,8 @@ const CloudDashboard = () => {
         setBackupColumns(columns || defaultBackupColumns);
         setBackupRows(rows || []);
       }
+      
+      setHasUnsavedChanges(false);
     } catch (err) {
       console.error('Error fetching cloud dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -622,7 +691,7 @@ const CloudDashboard = () => {
     fetchData();
   }, [fetchData]);
 
-  // Save both datasets
+  // Save both datasets manually
   const saveData = async () => {
     try {
       setSaveLoading(true);
@@ -649,6 +718,7 @@ const CloudDashboard = () => {
       
       toast.success('Cloud dashboard data saved successfully!');
       setLastUpdated(new Date().toISOString());
+      setHasUnsavedChanges(false);
       return true;
     } catch (err) {
       console.error('Error saving cloud dashboard data:', err);
@@ -664,13 +734,13 @@ const CloudDashboard = () => {
     setCloudReportTitle(config.reportTitle);
     setCloudReportDates(config.reportDates);
     setCloudTotalSpaceUsed(config.totalSpaceUsed);
-    await saveData();
+    markAsChanged();
   };
 
   const handleBackupConfigSave = async (config) => {
     setBackupReportTitle(config.reportTitle);
     setBackupReportDates(config.reportDates);
-    await saveData();
+    markAsChanged();
   };
 
   // Cloud Column Management
@@ -678,6 +748,7 @@ const CloudDashboard = () => {
     if (newCloudColumnName.trim() && !cloudColumns.includes(newCloudColumnName.trim())) {
       setCloudColumns([...cloudColumns, newCloudColumnName.trim()]);
       setNewCloudColumnName('');
+      markAsChanged();
       toast.success(`Cloud column "${newCloudColumnName}" added successfully!`);
     } else if (cloudColumns.includes(newCloudColumnName.trim())) {
       toast.error('Column already exists!');
@@ -696,6 +767,7 @@ const CloudDashboard = () => {
       return newRow;
     });
     setCloudRows(updatedRows);
+    markAsChanged();
     
     toast.success(`Cloud column "${columnToRemove}" removed successfully!`);
   };
@@ -705,6 +777,7 @@ const CloudDashboard = () => {
     if (newBackupColumnName.trim() && !backupColumns.includes(newBackupColumnName.trim())) {
       setBackupColumns([...backupColumns, newBackupColumnName.trim()]);
       setNewBackupColumnName('');
+      markAsChanged();
       toast.success(`Backup column "${newBackupColumnName}" added successfully!`);
     } else if (backupColumns.includes(newBackupColumnName.trim())) {
       toast.error('Column already exists!');
@@ -723,6 +796,7 @@ const CloudDashboard = () => {
       return newRow;
     });
     setBackupRows(updatedRows);
+    markAsChanged();
     
     toast.success(`Backup column "${columnToRemove}" removed successfully!`);
   };
@@ -734,11 +808,13 @@ const CloudDashboard = () => {
       newRow[column] = '';
     });
     setCloudRows([...cloudRows, newRow]);
+    markAsChanged();
     toast.success('New cloud service row added successfully!');
   };
 
   const handleRemoveCloudRow = (indexToRemove) => {
     setCloudRows(cloudRows.filter((_, index) => index !== indexToRemove));
+    markAsChanged();
     toast.success('Cloud service row removed successfully!');
   };
 
@@ -746,6 +822,7 @@ const CloudDashboard = () => {
     const updatedRows = [...cloudRows];
     updatedRows[rowIndex][column] = value;
     setCloudRows(updatedRows);
+    markAsChanged();
   };
 
   const handleAddBackupRow = () => {
@@ -754,11 +831,13 @@ const CloudDashboard = () => {
       newRow[column] = '';
     });
     setBackupRows([...backupRows, newRow]);
+    markAsChanged();
     toast.success('New backup server row added successfully!');
   };
 
   const handleRemoveBackupRow = (indexToRemove) => {
     setBackupRows(backupRows.filter((_, index) => index !== indexToRemove));
+    markAsChanged();
     toast.success('Backup server row removed successfully!');
   };
 
@@ -766,16 +845,20 @@ const CloudDashboard = () => {
     const updatedRows = [...backupRows];
     updatedRows[rowIndex][column] = value;
     setBackupRows(updatedRows);
+    markAsChanged();
   };
 
   // Toggle preview mode
   const togglePreviewMode = () => {
     if (!isPreviewMode) {
-      saveData().then((success) => {
-        if (success) {
+      // Auto-save before preview
+      if (hasUnsavedChanges) {
+        autoSave().then(() => {
           navigate('/cloud-dashboard?preview=true');
-        }
-      });
+        });
+      } else {
+        navigate('/cloud-dashboard?preview=true');
+      }
     } else {
       navigate('/cloud-dashboard');
     }
@@ -871,6 +954,15 @@ const CloudDashboard = () => {
     }
   };
 
+  // Cleanup auto-save timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Render preview mode
   if (isPreviewMode) {
     const reportData = getReportData();
@@ -907,6 +999,11 @@ const CloudDashboard = () => {
             <p className={`mt-2 text-sm sm:text-base ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
               Manage cloud services and backup server configurations
             </p>
+            {hasUnsavedChanges && (
+              <p className={`mt-1 text-sm ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                ● Unsaved changes (auto-saving...)
+              </p>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
@@ -929,7 +1026,16 @@ const CloudDashboard = () => {
               className={`btn ${saveLoading ? 'btn-secondary opacity-50' : 'btn-primary'}`}
             >
               <FiSave className="mr-2" />
-              {saveLoading ? 'Saving...' : 'Save Changes'}
+              {saveLoading ? 'Saving...' : 'Save Now'}
+            </button>
+            
+            <button
+              onClick={fetchData}
+              disabled={loading}
+              className="btn btn-secondary"
+            >
+              <FiRefreshCw className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
             </button>
           </div>
         </div>
