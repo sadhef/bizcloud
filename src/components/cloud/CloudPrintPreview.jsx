@@ -1,53 +1,130 @@
-// src/components/cloud/CloudPrintPreview.jsx - WITHOUT STATUS LEGEND
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { FiArrowLeft, FiPrinter } from 'react-icons/fi';
 
-// Helper function to get status color for print
-const getStatusColorForPrint = (value, isServerStatus = false, isCloudStatus = false) => {
-  if (!value) return { bg: '#ffffff', color: '#000000', border: '#cccccc' };
+// Helper function to get status color with ENHANCED PRINT VISIBILITY
+const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) => {
+  if (!value) return { bg: '#ffffff', color: '#000000', border: '#000000', printBg: '#ffffff', printColor: '#000000' };
   
   const normalizedVal = value.toUpperCase();
   
   if (isServerStatus) {
     switch (normalizedVal) {
       case 'ONLINE':
-        return { bg: '#10b981', color: '#ffffff', border: '#059669' };
+        return { 
+          bg: '#10b981', 
+          color: '#ffffff', 
+          border: '#059669',
+          printBg: '#059669',  // Darker green for better print visibility
+          printColor: '#ffffff'
+        };
       case 'OFFLINE':
-        return { bg: '#ef4444', color: '#ffffff', border: '#dc2626' };
+        return { 
+          bg: '#ef4444', 
+          color: '#ffffff', 
+          border: '#dc2626',
+          printBg: '#b91c1c',  // Darker red for better print visibility
+          printColor: '#ffffff'
+        };
       default:
-        return { bg: '#ffffff', color: '#000000', border: '#cccccc' };
+        return { 
+          bg: '#ffffff', 
+          color: '#000000', 
+          border: '#000000',
+          printBg: '#ffffff',
+          printColor: '#000000'
+        };
     }
   } else if (isCloudStatus) {
     switch (normalizedVal) {
       case 'AUTOMATIC':
       case 'ONLINE':
-        return { bg: '#10b981', color: '#ffffff', border: '#059669' };
+        return { 
+          bg: '#10b981', 
+          color: '#ffffff', 
+          border: '#059669',
+          printBg: '#059669',  // Darker green
+          printColor: '#ffffff'
+        };
       case 'MANUAL':
       case 'MAINTENANCE':
-        return { bg: '#f59e0b', color: '#000000', border: '#d97706' };
+        return { 
+          bg: '#f59e0b', 
+          color: '#000000', 
+          border: '#d97706',
+          printBg: '#b45309',  // Much darker orange
+          printColor: '#ffffff'
+        };
       case 'FAILED':
       case 'OFFLINE':
-        return { bg: '#ef4444', color: '#ffffff', border: '#dc2626' };
+        return { 
+          bg: '#ef4444', 
+          color: '#ffffff', 
+          border: '#dc2626',
+          printBg: '#b91c1c',  // Darker red
+          printColor: '#ffffff'
+        };
       case 'IN PROGRESS':
-        return { bg: '#3b82f6', color: '#ffffff', border: '#2563eb' };
+        return { 
+          bg: '#3b82f6', 
+          color: '#ffffff', 
+          border: '#2563eb',
+          printBg: '#1d4ed8',  // Darker blue
+          printColor: '#ffffff'
+        };
       case 'N/A':
-        return { bg: '#6b7280', color: '#ffffff', border: '#4b5563' };
+        return { 
+          bg: '#6b7280', 
+          color: '#ffffff', 
+          border: '#4b5563',
+          printBg: '#374151',  // Much darker gray
+          printColor: '#ffffff'
+        };
       default:
-        return { bg: '#ffffff', color: '#000000', border: '#cccccc' };
+        return { 
+          bg: '#ffffff', 
+          color: '#000000', 
+          border: '#000000',
+          printBg: '#ffffff',
+          printColor: '#000000'
+        };
     }
   } else {
     // Backup weekday status
     switch (normalizedVal) {
       case 'RUNNING':
-        return { bg: '#10b981', color: '#ffffff', border: '#059669' };
+        return { 
+          bg: '#10b981', 
+          color: '#ffffff', 
+          border: '#059669',
+          printBg: '#059669',  // Darker green
+          printColor: '#ffffff'
+        };
       case 'NOT RUNNING':
-        return { bg: '#ef4444', color: '#ffffff', border: '#dc2626' };
+        return { 
+          bg: '#ef4444', 
+          color: '#ffffff', 
+          border: '#dc2626',
+          printBg: '#b91c1c',  // Darker red
+          printColor: '#ffffff'
+        };
       case 'N/A':
-        return { bg: '#6b7280', color: '#ffffff', border: '#4b5563' };
+        return { 
+          bg: '#6b7280', 
+          color: '#ffffff', 
+          border: '#4b5563',
+          printBg: '#374151',  // Much darker gray
+          printColor: '#ffffff'
+        };
       default:
-        return { bg: '#ffffff', color: '#000000', border: '#cccccc' };
+        return { 
+          bg: '#ffffff', 
+          color: '#000000', 
+          border: '#000000',
+          printBg: '#ffffff',
+          printColor: '#000000'
+        };
     }
   }
 };
@@ -69,80 +146,84 @@ const renderCellWithColor = (value, column, isBackup = false) => {
   const isServerStatusColumn = column === 'SERVER STATUS';
   
   if (isServerStatusColumn) {
-    const colors = getStatusColorForPrint(value, true, false);
+    const colors = getStatusColor(value, true, false);
     return (
       <span
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '4px 8px',
-          borderRadius: '6px',
+          border: `3px solid ${colors.border}`,
+          padding: '8px 12px',
+          borderRadius: '8px',
           fontWeight: 'bold',
-          fontSize: '11px',
+          fontSize: '12px',
           display: 'inline-block',
-          minWidth: '70px',
-          textAlign: 'center'
+          minWidth: '85px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
       </span>
     );
   } else if (isStatusColumn) {
-    const colors = getStatusColorForPrint(value, false, true);
+    const colors = getStatusColor(value, false, true);
     return (
       <span
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '4px 8px',
-          borderRadius: '6px',
+          border: `3px solid ${colors.border}`,
+          padding: '8px 12px',
+          borderRadius: '8px',
           fontWeight: 'bold',
-          fontSize: '11px',
+          fontSize: '12px',
           display: 'inline-block',
-          minWidth: '80px',
-          textAlign: 'center'
+          minWidth: '95px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
       </span>
     );
   } else if (isWeekdayColumn && isBackup) {
-    const colors = getStatusColorForPrint(value, false, false);
+    const colors = getStatusColor(value, false, false);
     return (
       <span
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '4px 8px',
-          borderRadius: '6px',
+          border: `3px solid ${colors.border}`,
+          padding: '8px 12px',
+          borderRadius: '8px',
           fontWeight: 'bold',
-          fontSize: '11px',
+          fontSize: '12px',
           display: 'inline-block',
-          minWidth: '70px',
-          textAlign: 'center'
+          minWidth: '85px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
       </span>
     );
   } else if (isWeekdayColumn && !isBackup) {
-    const colors = getStatusColorForPrint(value, false, true);
+    const colors = getStatusColor(value, false, true);
     return (
       <span
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '4px 8px',
-          borderRadius: '6px',
+          border: `3px solid ${colors.border}`,
+          padding: '8px 12px',
+          borderRadius: '8px',
           fontWeight: 'bold',
-          fontSize: '11px',
+          fontSize: '12px',
           display: 'inline-block',
-          minWidth: '80px',
-          textAlign: 'center'
+          minWidth: '85px',
+          textAlign: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
@@ -186,7 +267,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
       }}, 2000);
 
     function generatePrintContent(logoBase64) {
-      // Generate colored cells for print
+      // Generate colored cells for print with ENHANCED VISIBILITY
       const generateColoredCellsForPrint = (data, isBackup = false) => {
         return data.rows.map(row => `
           <tr>
@@ -197,30 +278,69 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               const isServerStatusColumn = column === 'SERVER STATUS';
               
               if (isServerStatusColumn) {
-                const colors = getStatusColorForPrint(value, true, false);
-                return `<td style="text-align: center; padding: 8px 4px;">
-                  <span style="background-color: ${colors.bg}; color: ${colors.color}; border: 2px solid ${colors.border}; padding: 6px 10px; border-radius: 8px; font-weight: bold; font-size: 11px; display: inline-block; min-width: 80px;">
+                const colors = getStatusColor(value, true, false);
+                return `<td style="text-align: center; padding: 10px 6px;">
+                  <span style="
+                    background-color: ${colors.printBg}; 
+                    color: ${colors.printColor}; 
+                    border: 4px solid ${colors.border}; 
+                    padding: 10px 14px; 
+                    border-radius: 10px; 
+                    font-weight: bold; 
+                    font-size: 13px; 
+                    display: inline-block; 
+                    min-width: 90px; 
+                    text-align: center;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                    letter-spacing: 0.5px;
+                  ">
                     ${value || 'N/A'}
                   </span>
                 </td>`;
               } else if (isStatusColumn) {
-                const colors = getStatusColorForPrint(value, false, true);
-                return `<td style="text-align: center; padding: 8px 4px;">
-                  <span style="background-color: ${colors.bg}; color: ${colors.color}; border: 2px solid ${colors.border}; padding: 6px 10px; border-radius: 8px; font-weight: bold; font-size: 11px; display: inline-block; min-width: 90px;">
+                const colors = getStatusColor(value, false, true);
+                return `<td style="text-align: center; padding: 10px 6px;">
+                  <span style="
+                    background-color: ${colors.printBg}; 
+                    color: ${colors.printColor}; 
+                    border: 4px solid ${colors.border}; 
+                    padding: 10px 14px; 
+                    border-radius: 10px; 
+                    font-weight: bold; 
+                    font-size: 13px; 
+                    display: inline-block; 
+                    min-width: 100px; 
+                    text-align: center;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                    letter-spacing: 0.5px;
+                  ">
                     ${value || 'N/A'}
                   </span>
                 </td>`;
               } else if (isWeekdayColumn) {
                 const colors = isBackup 
-                  ? getStatusColorForPrint(value, false, false)  // Backup weekday status
-                  : getStatusColorForPrint(value, false, true);  // Cloud weekday status
-                return `<td style="text-align: center; padding: 8px 4px;">
-                  <span style="background-color: ${colors.bg}; color: ${colors.color}; border: 2px solid ${colors.border}; padding: 6px 10px; border-radius: 8px; font-weight: bold; font-size: 11px; display: inline-block; min-width: 80px;">
+                  ? getStatusColor(value, false, false)  // Backup weekday status
+                  : getStatusColor(value, false, true);  // Cloud weekday status
+                return `<td style="text-align: center; padding: 10px 6px;">
+                  <span style="
+                    background-color: ${colors.printBg}; 
+                    color: ${colors.printColor}; 
+                    border: 4px solid ${colors.border}; 
+                    padding: 10px 14px; 
+                    border-radius: 10px; 
+                    font-weight: bold; 
+                    font-size: 13px; 
+                    display: inline-block; 
+                    min-width: 90px; 
+                    text-align: center;
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                    letter-spacing: 0.5px;
+                  ">
                     ${value || 'N/A'}
                   </span>
                 </td>`;
               } else {
-                return `<td style="padding: 8px 4px; text-align: left;">${value}</td>`;
+                return `<td style="padding: 10px 8px; text-align: left; vertical-align: middle; font-weight: 500; color: #000;">${value || ''}</td>`;
               }
             }).join('')}
           </tr>
@@ -233,119 +353,176 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
         <head>
           <title>Cloud Infrastructure Status Report</title>
           <style>
+            * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
               padding: 20px; 
               color: #000; 
               background: #fff; 
-              line-height: 1.4;
+              line-height: 1.5;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             .report-header { 
               text-align: center; 
-              margin-bottom: 30px; 
-              border-bottom: 3px solid #000; 
-              padding-bottom: 20px; 
+              margin-bottom: 35px; 
+              border-bottom: 4px solid #000; 
+              padding-bottom: 25px; 
             }
             .logo { 
-              width: 120px; 
+              width: 130px; 
               height: auto; 
-              margin-bottom: 15px; 
+              margin-bottom: 20px; 
               display: block; 
               margin-left: auto; 
               margin-right: auto; 
-              border-radius: 12px;
-              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+              border-radius: 15px;
+              box-shadow: 0 6px 12px rgba(0,0,0,0.2);
             }
             .report-title { 
-              font-size: 32px; 
+              font-size: 36px; 
               font-weight: bold; 
-              margin-bottom: 12px; 
+              margin-bottom: 15px; 
               color: #000; 
-              text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              text-shadow: 0 3px 6px rgba(0,0,0,0.2);
             }
             .report-subtitle { 
-              font-size: 20px; 
-              margin-bottom: 8px; 
-              color: #333; 
-              font-weight: 600;
+              font-size: 22px; 
+              margin-bottom: 10px; 
+              color: #222; 
+              font-weight: 700;
             }
             .report-date { 
-              font-size: 14px; 
-              margin-bottom: 5px; 
-              color: #666; 
+              font-size: 16px; 
+              margin-bottom: 8px; 
+              color: #444; 
               font-style: italic;
+              font-weight: 500;
             }
             .total-space { 
-              font-size: 16px; 
-              margin-top: 10px; 
+              font-size: 18px; 
+              margin-top: 15px; 
               font-weight: bold; 
-              color: #2563eb; 
-              background: #eff6ff;
-              padding: 8px 16px;
-              border-radius: 8px;
+              color: #1e40af; 
+              background: #dbeafe;
+              padding: 12px 20px;
+              border-radius: 10px;
               display: inline-block;
+              border: 2px solid #2563eb;
             }
             .section-header { 
-              font-size: 22px; 
+              font-size: 26px; 
               font-weight: bold; 
-              margin: 40px 0 20px 0; 
-              padding: 12px 16px; 
-              background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); 
-              border-left: 6px solid #2563eb; 
-              border-radius: 8px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              margin: 35px 0 25px 0; 
+              padding: 16px 20px; 
+              background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%); 
+              border-left: 8px solid #1e40af; 
+              border-radius: 10px;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+              color: #000;
             }
             .report-table { 
               width: 100%; 
               border-collapse: collapse; 
-              margin-bottom: 40px; 
-              font-size: 11px; 
-              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-              border-radius: 8px;
+              margin-bottom: 35px; 
+              font-size: 13px; 
+              box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+              border-radius: 10px;
               overflow: hidden;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             .report-table th, .report-table td { 
-              border: 1px solid #d1d5db; 
-              padding: 10px 6px; 
+              border: 2px solid #9ca3af; 
+              padding: 12px 10px; 
               text-align: left; 
               vertical-align: middle; 
             }
             .report-table th { 
-              background: linear-gradient(135deg, #374151 0%, #1f2937 100%); 
-              color: white;
+              background: #1f2937 !important; 
+              color: white !important;
               font-weight: bold; 
               text-transform: uppercase; 
-              font-size: 10px; 
-              letter-spacing: 0.5px;
+              font-size: 12px; 
+              letter-spacing: 1px;
               text-align: center;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             .report-table tbody tr:nth-child(even) {
-              background-color: #f9fafb;
+              background-color: #f8fafc !important;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
-            .report-table tbody tr:hover {
-              background-color: #f3f4f6;
+            .service-count {
+              background: #bfdbfe !important;
+              color: #1e40af !important;
+              padding: 6px 12px;
+              border-radius: 15px;
+              font-size: 14px;
+              font-weight: 700;
+              margin-left: 10px;
+              border: 2px solid #2563eb;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .backup-count {
+              background: #bbf7d0 !important;
+              color: #166534 !important;
+              padding: 6px 12px;
+              border-radius: 15px;
+              font-size: 14px;
+              font-weight: 700;
+              margin-left: 10px;
+              border: 2px solid #16a34a;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             .report-footer { 
               text-align: center; 
-              margin-top: 40px; 
-              font-size: 12px; 
-              color: #666; 
-              border-top: 2px solid #e5e7eb; 
-              padding-top: 20px; 
-              background: #f9fafb;
-              border-radius: 8px;
-              padding: 20px;
+              margin-top: 45px; 
+              font-size: 14px; 
+              color: #444; 
+              border-top: 3px solid #d1d5db; 
+              padding-top: 25px; 
+              background: #f8fafc !important;
+              border-radius: 10px;
+              padding: 25px;
+              font-weight: 500;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             @page { 
               size: A4 landscape; 
-              margin: 15mm; 
+              margin: 12mm; 
             }
             @media print { 
-              body { margin: 0; } 
+              body { 
+                margin: 0; 
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              } 
               .no-print { display: none; } 
               .report-table { page-break-inside: avoid; }
               .section-header { page-break-after: avoid; }
+              * {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
             }
           </style>
         </head>
@@ -360,7 +537,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             ${cloudData.totalSpaceUsed ? `<div class="total-space">📊 Total Space Used: ${cloudData.totalSpaceUsed}</div>` : ''}
           </div>
           
-          <div class="section-header">☁️ ${cloudData.reportTitle || 'Cloud Services Status'}</div>
+          <div class="section-header">☁️ ${cloudData.reportTitle || 'Cloud Services Status'}<span class="service-count">${cloudData.rows.length} services</span></div>
           <table class="report-table">
             <thead>
               <tr>
@@ -372,7 +549,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             </tbody>
           </table>
           
-          <div class="section-header">🗄️ ${backupData.reportTitle || 'Backup Server Cronjob Status'}</div>
+          <div class="section-header">🗄️ ${backupData.reportTitle || 'Backup Server Cronjob Status'}<span class="backup-count">${backupData.rows.length} servers</span></div>
           <table class="report-table">
             <thead>
               <tr>
@@ -383,15 +560,6 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               ${generateColoredCellsForPrint(backupData, true)}
             </tbody>
           </table>
-          
-          <div class="report-footer">
-            <p><strong>📅 Generated on:</strong> ${new Date().toLocaleString()}</p>
-            <p><strong>📊 Summary:</strong> Cloud Services: ${cloudData.rows.length} | Backup Servers: ${backupData.rows.length}</p>
-            ${cloudData.totalSpaceUsed ? `<p><strong>💾 Total Space Used:</strong> ${cloudData.totalSpaceUsed}</p>` : ''}
-            <p style="margin-top: 15px; font-style: italic; color: #6b7280;">
-              This report was automatically generated by BizTras Cloud Infrastructure Management System
-            </p>
-          </div>
           
           <script>
             window.onload = function() {
@@ -496,7 +664,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                   {cloudData.rows.map((row, rowIndex) => (
                     <tr key={rowIndex} className={isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}>
                       {cloudData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-center">
                           {renderCellWithColor(row[column], column, false)}
                         </td>
                       ))}
@@ -535,7 +703,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                   {backupData.rows.map((row, rowIndex) => (
                     <tr key={rowIndex} className={isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}>
                       {backupData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-center">
                           {renderCellWithColor(row[column], column, true)}
                         </td>
                       ))}
@@ -551,7 +719,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             isDark ? 'bg-gray-700/50' : 'bg-gray-50'
           }`}>
             <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Generated on {new Date().toLocaleString()} • 
+              Generated on {new Date().toLocaleString()}
               Cloud Services: {cloudData.rows.length} • 
               Backup Servers: {backupData.rows.length}
               {cloudData.totalSpaceUsed && ` • Total Space: ${cloudData.totalSpaceUsed}`}

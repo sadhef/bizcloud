@@ -1,4 +1,3 @@
-// src/components/cloud/CloudDashboard.jsx - FIXED VERSION
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -17,7 +16,6 @@ import {
   FiMove
 } from 'react-icons/fi';
 import api from '../../services/api';
-import * as XLSX from 'xlsx';
 import CloudPrintPreview from './CloudPrintPreview';
 
 // Drag and Drop Column Component
@@ -331,114 +329,6 @@ const ConfigurationModal = ({
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-// Export Dropdown Component
-const ExportDropdown = ({ reportData, disabled = false }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const dropdownRef = useRef(null);
-  const { isDark } = useTheme();
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const exportToExcel = (data, fileName) => {
-    try {
-      const { cloudData, backupData } = data;
-      
-      const wb = XLSX.utils.book_new();
-      
-      const cloudWs = XLSX.utils.aoa_to_sheet([cloudData.columns]);
-      const cloudRowData = cloudData.rows.map(row => 
-        cloudData.columns.map(column => row[column] || '')
-      );
-      XLSX.utils.sheet_add_aoa(cloudWs, cloudRowData, { origin: 'A2' });
-      XLSX.utils.book_append_sheet(wb, cloudWs, 'Cloud Services');
-      
-      const backupWs = XLSX.utils.aoa_to_sheet([backupData.columns]);
-      const backupRowData = backupData.rows.map(row => 
-        backupData.columns.map(column => row[column] || '')
-      );
-      XLSX.utils.sheet_add_aoa(backupWs, backupRowData, { origin: 'A2' });
-      XLSX.utils.book_append_sheet(wb, backupWs, 'Backup Servers');
-      
-      XLSX.writeFile(wb, `${fileName}.xlsx`);
-      return true;
-    } catch (error) {
-      console.error('Error exporting to Excel:', error);
-      throw error;
-    }
-  };
-
-  const handleExport = async (format) => {
-    if (!reportData || isExporting) return;
-
-    try {
-      setIsExporting(true);
-      const timestamp = new Date().toISOString().split('T')[0];
-      const fileName = `cloud-infrastructure-report-${timestamp}`;
-
-      if (format === 'excel') {
-        exportToExcel(reportData, fileName);
-        toast.success('Report exported to Excel successfully!');
-      }
-      
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error(`Failed to export to ${format.toUpperCase()}`);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        disabled={disabled || isExporting}
-        className={`btn ${
-          disabled || isExporting
-            ? 'btn-secondary opacity-50 cursor-not-allowed'
-            : 'btn-success'
-        }`}
-      >
-        <FiDownload className="mr-2" />
-        {isExporting ? 'Exporting...' : 'Export'}
-      </button>
-
-      {isOpen && !disabled && (
-        <div className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg z-50 animate-scale-in ${
-          isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
-        }`}>
-          <div className="py-1">
-            <button
-              onClick={() => handleExport('excel')}
-              disabled={isExporting}
-              className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                isDark
-                  ? 'hover:bg-gray-700 text-gray-200'
-                  : 'hover:bg-gray-50 text-gray-900'
-              } ${isExporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-            >
-              Export as Excel
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -1007,10 +897,6 @@ const CloudDashboard = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            <ExportDropdown 
-              reportData={getReportData()} 
-              disabled={cloudRows.length === 0 && backupRows.length === 0}
-            />
             
             <button
               onClick={togglePreviewMode}
@@ -1333,8 +1219,7 @@ const CloudDashboard = () => {
                       {backupColumns.map((column, index) => (
                         <th
                           key={index}
-                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                            isDark ? 'text-gray-300' : 'text-gray-500'
+                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'
                           }`}
                         >
                           {column}
