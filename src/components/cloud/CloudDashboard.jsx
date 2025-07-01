@@ -16,21 +16,64 @@ import {
   FiCalendar,
   FiEdit3,
   FiCheck,
-  FiX
+  FiX,
+  FiMove
 } from 'react-icons/fi';
 import api from '../../services/api';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
-// Styled Status Select Component with Colors
-const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false }) => {
+// Drag and Drop Column Component
+const DraggableColumn = ({ column, index, onRemove, onDragStart, onDragOver, onDrop, isDark, isBeingDragged }) => {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop(e, index)}
+      className={`flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200 cursor-move ${
+        isBeingDragged 
+          ? 'opacity-50 scale-95' 
+          : isDark 
+            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+      } ${isDark ? 'border border-gray-600' : 'border border-gray-300'}`}
+    >
+      <FiMove className="mr-2 text-gray-400" size={14} />
+      <span className="flex-1">{column}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(index);
+        }}
+        className={`ml-2 p-1 rounded text-error-500 hover:text-error-700 focus:outline-none transition-colors ${
+          isDark ? 'hover:text-error-400 hover:bg-error-900/20' : 'hover:text-error-600 hover:bg-error-50'
+        }`}
+      >
+        <FiTrash2 size={12} />
+      </button>
+    </div>
+  );
+};
+
+// Enhanced Status Select Component with Server Status Support
+const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false, isServerStatus = false }) => {
   const getBackgroundColor = (val) => {
     if (!val) return isDark ? '#374151' : '#ffffff';
     
     const normalizedVal = val.toUpperCase();
     
-    if (isCloudStatus) {
+    if (isServerStatus) {
+      switch (normalizedVal) {
+        case 'ONLINE':
+          return '#10b981';
+        case 'OFFLINE':
+          return '#ef4444';
+        default:
+          return isDark ? '#374151' : '#ffffff';
+      }
+    } else if (isCloudStatus) {
       switch (normalizedVal) {
         case 'AUTOMATIC':
         case 'ONLINE':
@@ -91,7 +134,19 @@ const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false }) 
           : 'border-gray-300'
       }`}
     >
-      {isCloudStatus ? (
+      {isServerStatus ? (
+        <>
+          <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+            Select Status
+          </option>
+          <option value="ONLINE" style={{ backgroundColor: '#10b981', color: '#ffffff' }}>
+            ONLINE
+          </option>
+          <option value="OFFLINE" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
+            OFFLINE
+          </option>
+        </>
+      ) : isCloudStatus ? (
         <>
           <option value="" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
             Select Status
@@ -646,8 +701,8 @@ const CloudDashboard = () => {
   });
   const [cloudTotalSpaceUsed, setCloudTotalSpaceUsed] = useState('');
 
-  // Backup Data State
-  const [backupColumns, setBackupColumns] = useState(['Server', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks']);
+  // Backup Data State with SERVER STATUS column included
+  const [backupColumns, setBackupColumns] = useState(['Server', 'SERVER STATUS', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks']);
   const [backupRows, setBackupRows] = useState([]);
   const [backupReportTitle, setBackupReportTitle] = useState('Backup Server Cronjob Status');
   const [backupReportDates, setBackupReportDates] = useState({
@@ -666,6 +721,10 @@ const CloudDashboard = () => {
   const [newCloudColumnName, setNewCloudColumnName] = useState('');
   const [newBackupColumnName, setNewBackupColumnName] = useState('');
 
+  // Drag and drop states
+  const [draggedCloudIndex, setDraggedCloudIndex] = useState(null);
+  const [draggedBackupIndex, setDraggedBackupIndex] = useState(null);
+
   // Modal states
   const [showCloudConfigModal, setShowCloudConfigModal] = useState(false);
   const [showBackupConfigModal, setShowBackupConfigModal] = useState(false);
@@ -676,6 +735,74 @@ const CloudDashboard = () => {
 
   // Check if we're in preview mode
   const isPreviewMode = new URLSearchParams(location.search).get('preview') === 'true';
+
+  // Drag and drop handlers for Cloud columns
+  const handleCloudColumnDragStart = (e, index) => {
+    setDraggedCloudIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleCloudColumnDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleCloudColumnDrop = (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (draggedCloudIndex === null || draggedCloudIndex === dropIndex) {
+      setDraggedCloudIndex(null);
+      return;
+    }
+
+    const newColumns = [...cloudColumns];
+    const draggedColumn = newColumns[draggedCloudIndex];
+    
+    // Remove the dragged item
+    newColumns.splice(draggedCloudIndex, 1);
+    
+    // Insert at new position
+    newColumns.splice(dropIndex, 0, draggedColumn);
+    
+    setCloudColumns(newColumns);
+    setDraggedCloudIndex(null);
+    
+    toast.success('Cloud columns reordered successfully!');
+  };
+
+  // Drag and drop handlers for Backup columns
+  const handleBackupColumnDragStart = (e, index) => {
+    setDraggedBackupIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleBackupColumnDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleBackupColumnDrop = (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (draggedBackupIndex === null || draggedBackupIndex === dropIndex) {
+      setDraggedBackupIndex(null);
+      return;
+    }
+
+    const newColumns = [...backupColumns];
+    const draggedColumn = newColumns[draggedBackupIndex];
+    
+    // Remove the dragged item
+    newColumns.splice(draggedBackupIndex, 1);
+    
+    // Insert at new position
+    newColumns.splice(dropIndex, 0, draggedColumn);
+    
+    setBackupColumns(newColumns);
+    setDraggedBackupIndex(null);
+    
+    toast.success('Backup columns reordered successfully!');
+  };
 
   // Fetch both cloud and backup data
   const fetchData = useCallback(async () => {
@@ -713,7 +840,9 @@ const CloudDashboard = () => {
           endDate: backupDates.endDate ? new Date(backupDates.endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         });
         
-        setBackupColumns(columns || ['Server', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks']);
+        // Include SERVER STATUS column by default if not present
+        const defaultBackupColumns = ['Server', 'SERVER STATUS', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks'];
+        setBackupColumns(columns || defaultBackupColumns);
         setBackupRows(rows || []);
       }
     } catch (err) {
@@ -946,8 +1075,18 @@ const CloudDashboard = () => {
 
   const renderBackupCell = (row, column, rowIndex) => {
     const isWeekdayColumn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
+    const isServerStatusColumn = column === 'SERVER STATUS';
 
-    if (isWeekdayColumn) {
+    if (isServerStatusColumn) {
+      return (
+        <StyledStatusSelect
+          value={row[column] || ''}
+          onChange={(newValue) => handleBackupCellChange(rowIndex, column, newValue)}
+          isDark={isDark}
+          isServerStatus={true}
+        />
+      );
+    } else if (isWeekdayColumn) {
       return (
         <StyledStatusSelect
           value={row[column] || ''}
@@ -1097,7 +1236,7 @@ const CloudDashboard = () => {
               </div>
             </div>
 
-            {/* Cloud Column Management */}
+            {/* Cloud Column Management with Drag & Drop */}
             <div className="card p-4 sm:p-6">
               <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Cloud Service Columns
@@ -1121,22 +1260,28 @@ const CloudDashboard = () => {
                 </button>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {cloudColumns.map((column, index) => (
-                  <div key={index} className={`flex items-center px-3 py-1 rounded-full text-sm ${
-                    isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    <span>{column}</span>
-                    <button
-                      onClick={() => handleRemoveCloudColumn(index)}
-                      className={`ml-2 text-error-500 hover:text-error-700 focus:outline-none transition-colors ${
-                        isDark ? 'hover:text-error-400' : 'hover:text-error-600'
-                      }`}
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
-                  </div>
-                ))}
+              <div className={`p-4 rounded-lg border-2 border-dashed mb-4 ${
+                isDark ? 'border-gray-600 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
+              }`}>
+                <p className={`text-sm mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <FiMove className="inline mr-1" size={14} />
+                  Drag and drop to reorder columns
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {cloudColumns.map((column, index) => (
+                    <DraggableColumn
+                      key={`cloud-${index}`}
+                      column={column}
+                      index={index}
+                      onRemove={handleRemoveCloudColumn}
+                      onDragStart={handleCloudColumnDragStart}
+                      onDragOver={handleCloudColumnDragOver}
+                      onDrop={handleCloudColumnDrop}
+                      isDark={isDark}
+                      isBeingDragged={draggedCloudIndex === index}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1241,7 +1386,7 @@ const CloudDashboard = () => {
               </div>
             </div>
 
-            {/* Backup Column Management */}
+            {/* Backup Column Management with Drag & Drop */}
             <div className="card p-4 sm:p-6">
               <h2 className={`text-xl font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Backup Server Columns
@@ -1265,22 +1410,28 @@ const CloudDashboard = () => {
                 </button>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {backupColumns.map((column, index) => (
-                  <div key={index} className={`flex items-center px-3 py-1 rounded-full text-sm ${
-                    isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'
-                  }`}>
-                    <span>{column}</span>
-                    <button
-                      onClick={() => handleRemoveBackupColumn(index)}
-                      className={`ml-2 text-error-500 hover:text-error-700 focus:outline-none transition-colors ${
-                        isDark ? 'hover:text-error-400' : 'hover:text-error-600'
-                      }`}
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
-                  </div>
-                ))}
+              <div className={`p-4 rounded-lg border-2 border-dashed mb-4 ${
+                isDark ? 'border-gray-600 bg-gray-800/50' : 'border-gray-300 bg-gray-50'
+              }`}>
+                <p className={`text-sm mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <FiMove className="inline mr-1" size={14} />
+                  Drag and drop to reorder columns
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {backupColumns.map((column, index) => (
+                    <DraggableColumn
+                      key={`backup-${index}`}
+                      column={column}
+                      index={index}
+                      onRemove={handleRemoveBackupColumn}
+                      onDragStart={handleBackupColumnDragStart}
+                      onDragOver={handleBackupColumnDragOver}
+                      onDrop={handleBackupColumnDrop}
+                      isDark={isDark}
+                      isBeingDragged={draggedBackupIndex === index}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -1399,3 +1550,5 @@ const CloudDashboard = () => {
 };
 
 export default CloudDashboard;
+
+  
