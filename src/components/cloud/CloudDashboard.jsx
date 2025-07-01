@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -12,7 +12,9 @@ import {
   FiSettings,
   FiX,
   FiMove,
-  FiAlertTriangle
+  FiAlertTriangle,
+  FiEdit2,
+  FiClock
 } from 'react-icons/fi';
 import api from '../../services/api';
 import CloudPrintPreview from './CloudPrintPreview';
@@ -325,9 +327,6 @@ const CloudDashboard = () => {
   const location = useLocation();
   const { isDark } = useTheme();
 
-  // Auto-save timeout ref
-  const autoSaveTimeoutRef = useRef(null);
-
   // Check if we're in preview mode
   const isPreviewMode = new URLSearchParams(location.search).get('preview') === 'true';
 
@@ -340,11 +339,6 @@ const CloudDashboard = () => {
       setError(null);
       
       console.log('Fetching fresh data...');
-      
-      // Clear any pending auto-save before fetching
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
       
       // Fetch both datasets
       const [cloudResponse, backupResponse] = await Promise.all([
@@ -410,86 +404,17 @@ const CloudDashboard = () => {
     }
   }, []);
 
-  // Simple auto-save function
-  const autoSave = useCallback(async () => {
-    if (!hasUnsavedChanges || saveLoading || loading) {
-      return;
-    }
-    
-    try {
-      console.log('Auto-saving data...');
-      
-      const cloudPayload = {
-        reportTitle: cloudReportTitle,
-        reportDates: cloudReportDates,
-        columns: cloudColumns,
-        rows: cloudRows,
-        totalSpaceUsed: cloudTotalSpaceUsed
-      };
-      
-      const backupPayload = {
-        reportTitle: backupReportTitle,
-        reportDates: backupReportDates,
-        columns: backupColumns,
-        rows: backupRows
-      };
-      
-      await Promise.all([
-        api.post('/cloud-report/save', cloudPayload),
-        api.post('/backup-server/save', backupPayload)
-      ]);
-      
-      setHasUnsavedChanges(false);
-      setLastUpdated(new Date().toISOString());
-      console.log('Auto-saved successfully');
-      
-    } catch (err) {
-      console.error('Auto-save failed:', err);
-      // Don't show error toast for auto-save failures
-    }
-  }, [
-    hasUnsavedChanges,
-    saveLoading,
-    loading,
-    cloudReportTitle,
-    cloudReportDates,
-    cloudColumns,
-    cloudRows,
-    cloudTotalSpaceUsed,
-    backupReportTitle,
-    backupReportDates,
-    backupColumns,
-    backupRows
-  ]);
-
-  // Simple debounced auto-save
-  const debouncedAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-    
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      autoSave();
-    }, 2000); // 2 seconds delay
-  }, [autoSave]);
-
-  // Mark as changed and trigger auto-save
+  // Mark as changed function (NO AUTO-SAVE)
   const markAsChanged = useCallback(() => {
     if (!hasUnsavedChanges) {
       setHasUnsavedChanges(true);
     }
-    debouncedAutoSave();
-  }, [hasUnsavedChanges, debouncedAutoSave]);
+  }, [hasUnsavedChanges]);
 
-  // MAIN FIX: Enhanced manual save with data refresh
+  // Manual save function
   const saveData = async () => {
     try {
       setSaveLoading(true);
-      
-      // Clear any pending auto-save
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
       
       console.log('Manual save initiated...');
       
@@ -516,7 +441,7 @@ const CloudDashboard = () => {
       
       console.log('Data saved successfully, refreshing...');
       
-      // CRITICAL: Fetch fresh data after save to ensure UI shows latest server data
+      // Fetch fresh data after save to ensure UI shows latest server data
       await fetchData(false); // Don't show loading state for this refresh
       
       toast.success('Data saved and refreshed successfully!');
@@ -538,11 +463,6 @@ const CloudDashboard = () => {
     setError(null);
     
     try {
-      // Clear any pending operations
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-      
       console.log('Force refresh initiated...');
       await fetchData(true); // Force fresh fetch with loading state
       toast.success('Data refreshed successfully!');
@@ -575,15 +495,6 @@ const CloudDashboard = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchData, loading, saveLoading]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Configuration handlers
   const handleCloudConfigSave = async (config) => {
@@ -788,7 +699,8 @@ const CloudDashboard = () => {
 
   // Prepare report data for preview
   const getReportData = () => {
-    return {cloudData: {
+    return {
+      cloudData: {
         reportTitle: cloudReportTitle,
         reportDates: cloudReportDates,
         columns: cloudColumns,
@@ -913,15 +825,16 @@ const CloudDashboard = () => {
             </p>
             <div className="flex items-center space-x-4 mt-2">
               {hasUnsavedChanges && (
-                <p className={`text-sm flex items-center ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
-                  <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></span>
-                  Unsaved changes (auto-saving...)
-                </p>
+                <div className={`text-sm flex items-center ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+                  <FiEdit2 className="mr-1" />
+                  Unsaved changes
+                </div>
               )}
               {lastUpdated && (
-                <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                <div className={`text-xs flex items-center ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                  <FiClock className="mr-1" />
                   Last updated: {new Date(lastUpdated).toLocaleString()}
-                </p>
+                </div>
               )}
             </div>
           </div>
@@ -938,11 +851,17 @@ const CloudDashboard = () => {
             
             <button
               onClick={saveData}
-              disabled={saveLoading}
-              className={`btn ${saveLoading ? 'btn-secondary opacity-50' : 'btn-primary'}`}
+              disabled={!hasUnsavedChanges || saveLoading}
+              className={`btn ${
+                hasUnsavedChanges && !saveLoading 
+                  ? 'btn-primary' 
+                  : isDark 
+                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
               <FiSave className="mr-2" />
-              {saveLoading ? 'Saving...' : 'Save Now'}
+              {saveLoading ? 'Saving...' : 'Save Changes'}
             </button>
             
             <button

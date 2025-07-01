@@ -16,7 +16,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#10b981', 
           color: '#ffffff', 
           border: '#059669',
-          printBg: '#059669',  // Darker green for better print visibility
+          printBg: '#059669',
           printColor: '#ffffff'
         };
       case 'OFFLINE':
@@ -24,7 +24,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#ef4444', 
           color: '#ffffff', 
           border: '#dc2626',
-          printBg: '#b91c1c',  // Darker red for better print visibility
+          printBg: '#b91c1c',
           printColor: '#ffffff'
         };
       default:
@@ -44,7 +44,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#10b981', 
           color: '#ffffff', 
           border: '#059669',
-          printBg: '#059669',  // Darker green
+          printBg: '#059669',
           printColor: '#ffffff'
         };
       case 'MANUAL':
@@ -53,7 +53,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#f59e0b', 
           color: '#000000', 
           border: '#d97706',
-          printBg: '#b45309',  // Much darker orange
+          printBg: '#b45309',
           printColor: '#ffffff'
         };
       case 'FAILED':
@@ -62,7 +62,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#ef4444', 
           color: '#ffffff', 
           border: '#dc2626',
-          printBg: '#b91c1c',  // Darker red
+          printBg: '#b91c1c',
           printColor: '#ffffff'
         };
       case 'IN PROGRESS':
@@ -70,7 +70,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#3b82f6', 
           color: '#ffffff', 
           border: '#2563eb',
-          printBg: '#1d4ed8',  // Darker blue
+          printBg: '#1d4ed8',
           printColor: '#ffffff'
         };
       case 'N/A':
@@ -78,7 +78,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#6b7280', 
           color: '#ffffff', 
           border: '#4b5563',
-          printBg: '#374151',  // Much darker gray
+          printBg: '#374151',
           printColor: '#ffffff'
         };
       default:
@@ -98,7 +98,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#10b981', 
           color: '#ffffff', 
           border: '#059669',
-          printBg: '#059669',  // Darker green
+          printBg: '#059669',
           printColor: '#ffffff'
         };
       case 'NOT RUNNING':
@@ -106,7 +106,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#ef4444', 
           color: '#ffffff', 
           border: '#dc2626',
-          printBg: '#b91c1c',  // Darker red
+          printBg: '#b91c1c',
           printColor: '#ffffff'
         };
       case 'N/A':
@@ -114,7 +114,7 @@ const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) =>
           bg: '#6b7280', 
           color: '#ffffff', 
           border: '#4b5563',
-          printBg: '#374151',  // Much darker gray
+          printBg: '#374151',
           printColor: '#ffffff'
         };
       default:
@@ -134,7 +134,7 @@ const formatDate = (date) => {
   if (!date) return '';
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric'
   });
 };
@@ -152,15 +152,15 @@ const renderCellWithColor = (value, column, isBackup = false) => {
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `3px solid ${colors.border}`,
-          padding: '8px 12px',
-          borderRadius: '8px',
+          border: `2px solid ${colors.border}`,
+          padding: '6px 10px',
+          borderRadius: '6px',
           fontWeight: 'bold',
-          fontSize: '12px',
+          fontSize: '11px',
           display: 'inline-block',
-          minWidth: '85px',
+          minWidth: '70px',
           textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
@@ -173,15 +173,15 @@ const renderCellWithColor = (value, column, isBackup = false) => {
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `3px solid ${colors.border}`,
-          padding: '8px 12px',
-          borderRadius: '8px',
+          border: `2px solid ${colors.border}`,
+          padding: '6px 10px',
+          borderRadius: '6px',
           fontWeight: 'bold',
-          fontSize: '12px',
+          fontSize: '11px',
           display: 'inline-block',
-          minWidth: '95px',
+          minWidth: '75px',
           textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
@@ -194,15 +194,15 @@ const renderCellWithColor = (value, column, isBackup = false) => {
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `3px solid ${colors.border}`,
-          padding: '8px 12px',
-          borderRadius: '8px',
+          border: `2px solid ${colors.border}`,
+          padding: '6px 10px',
+          borderRadius: '6px',
           fontWeight: 'bold',
-          fontSize: '12px',
+          fontSize: '11px',
           display: 'inline-block',
-          minWidth: '85px',
+          minWidth: '70px',
           textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
@@ -215,15 +215,15 @@ const renderCellWithColor = (value, column, isBackup = false) => {
         style={{
           backgroundColor: colors.bg,
           color: colors.color,
-          border: `3px solid ${colors.border}`,
-          padding: '8px 12px',
-          borderRadius: '8px',
+          border: `2px solid ${colors.border}`,
+          padding: '6px 10px',
+          borderRadius: '6px',
           fontWeight: 'bold',
-          fontSize: '12px',
+          fontSize: '11px',
           display: 'inline-block',
-          minWidth: '85px',
+          minWidth: '70px',
           textAlign: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
         }}
       >
         {value || 'N/A'}
@@ -264,10 +264,15 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
     setTimeout(() => {
       if (!logoImg.complete) {
         generatePrintContent(null);
-      }}, 2000);
+      }
+    }, 2000);
 
     function generatePrintContent(logoBase64) {
-      // Generate colored cells for print with ENHANCED VISIBILITY
+      // Calculate optimal column count and font size based on data
+      const maxColumns = Math.max(cloudData.columns.length, backupData.columns.length);
+      const isWideTable = maxColumns > 8;
+      
+      // Generate colored cells for print with SCREEN-OPTIMIZED SIZING
       const generateColoredCellsForPrint = (data, isBackup = false) => {
         return data.rows.map(row => `
           <tr>
@@ -279,68 +284,68 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               
               if (isServerStatusColumn) {
                 const colors = getStatusColor(value, true, false);
-                return `<td style="text-align: center; padding: 10px 6px;">
+                return `<td style="text-align: center; padding: ${isWideTable ? '4px 2px' : '6px 4px'};">
                   <span style="
                     background-color: ${colors.printBg}; 
                     color: ${colors.printColor}; 
-                    border: 4px solid ${colors.border}; 
-                    padding: 10px 14px; 
-                    border-radius: 10px; 
+                    border: 2px solid ${colors.border}; 
+                    padding: ${isWideTable ? '4px 6px' : '6px 8px'}; 
+                    border-radius: 6px; 
                     font-weight: bold; 
-                    font-size: 13px; 
+                    font-size: ${isWideTable ? '9px' : '10px'}; 
                     display: inline-block; 
-                    min-width: 90px; 
+                    min-width: ${isWideTable ? '50px' : '60px'}; 
                     text-align: center;
-                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-                    letter-spacing: 0.5px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    letter-spacing: 0.3px;
                   ">
                     ${value || 'N/A'}
                   </span>
                 </td>`;
               } else if (isStatusColumn) {
                 const colors = getStatusColor(value, false, true);
-                return `<td style="text-align: center; padding: 10px 6px;">
+                return `<td style="text-align: center; padding: ${isWideTable ? '4px 2px' : '6px 4px'};">
                   <span style="
                     background-color: ${colors.printBg}; 
                     color: ${colors.printColor}; 
-                    border: 4px solid ${colors.border}; 
-                    padding: 10px 14px; 
-                    border-radius: 10px; 
+                    border: 2px solid ${colors.border}; 
+                    padding: ${isWideTable ? '4px 6px' : '6px 8px'}; 
+                    border-radius: 6px; 
                     font-weight: bold; 
-                    font-size: 13px; 
+                    font-size: ${isWideTable ? '9px' : '10px'}; 
                     display: inline-block; 
-                    min-width: 100px; 
+                    min-width: ${isWideTable ? '55px' : '65px'}; 
                     text-align: center;
-                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-                    letter-spacing: 0.5px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    letter-spacing: 0.3px;
                   ">
                     ${value || 'N/A'}
                   </span>
                 </td>`;
               } else if (isWeekdayColumn) {
                 const colors = isBackup 
-                  ? getStatusColor(value, false, false)  // Backup weekday status
-                  : getStatusColor(value, false, true);  // Cloud weekday status
-                return `<td style="text-align: center; padding: 10px 6px;">
+                  ? getStatusColor(value, false, false)
+                  : getStatusColor(value, false, true);
+                return `<td style="text-align: center; padding: ${isWideTable ? '4px 2px' : '6px 4px'};">
                   <span style="
                     background-color: ${colors.printBg}; 
                     color: ${colors.printColor}; 
-                    border: 4px solid ${colors.border}; 
-                    padding: 10px 14px; 
-                    border-radius: 10px; 
+                    border: 2px solid ${colors.border}; 
+                    padding: ${isWideTable ? '4px 6px' : '6px 8px'}; 
+                    border-radius: 6px; 
                     font-weight: bold; 
-                    font-size: 13px; 
+                    font-size: ${isWideTable ? '9px' : '10px'}; 
                     display: inline-block; 
-                    min-width: 90px; 
+                    min-width: ${isWideTable ? '50px' : '60px'}; 
                     text-align: center;
-                    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-                    letter-spacing: 0.5px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    letter-spacing: 0.3px;
                   ">
                     ${value || 'N/A'}
                   </span>
                 </td>`;
               } else {
-                return `<td style="padding: 10px 8px; text-align: left; vertical-align: middle; font-weight: 500; color: #000;">${value || ''}</td>`;
+                return `<td style="padding: ${isWideTable ? '4px 3px' : '6px 5px'}; text-align: left; vertical-align: middle; font-weight: 500; color: #000; font-size: ${isWideTable ? '9px' : '10px'};">${value || ''}</td>`;
               }
             }).join('')}
           </tr>
@@ -357,91 +362,93 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
+              box-sizing: border-box;
             }
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
-              padding: 20px; 
+              padding: ${isWideTable ? '8px' : '12px'}; 
               color: #000; 
               background: #fff; 
-              line-height: 1.5;
+              line-height: 1.3;
+              font-size: ${isWideTable ? '10px' : '11px'};
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
             .report-header { 
               text-align: center; 
-              margin-bottom: 35px; 
-              border-bottom: 4px solid #000; 
-              padding-bottom: 25px; 
+              margin-bottom: ${isWideTable ? '15px' : '20px'}; 
+              border-bottom: 3px solid #000; 
+              padding-bottom: ${isWideTable ? '10px' : '15px'}; 
             }
             .logo { 
-              width: 130px; 
+              width: ${isWideTable ? '60px' : '80px'}; 
               height: auto; 
-              margin-bottom: 20px; 
+              margin-bottom: ${isWideTable ? '8px' : '12px'}; 
               display: block; 
               margin-left: auto; 
               margin-right: auto; 
-              border-radius: 15px;
-              box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+              border-radius: 8px;
+              box-shadow: 0 3px 6px rgba(0,0,0,0.2);
             }
             .report-title { 
-              font-size: 36px; 
+              font-size: ${isWideTable ? '18px' : '24px'}; 
               font-weight: bold; 
-              margin-bottom: 15px; 
+              margin-bottom: ${isWideTable ? '6px' : '10px'}; 
               color: #000; 
-              text-shadow: 0 3px 6px rgba(0,0,0,0.2);
+              text-shadow: 0 2px 4px rgba(0,0,0,0.2);
             }
             .report-subtitle { 
-              font-size: 22px; 
-              margin-bottom: 10px; 
+              font-size: ${isWideTable ? '12px' : '16px'}; 
+              margin-bottom: ${isWideTable ? '4px' : '6px'}; 
               color: #222; 
-              font-weight: 700;
+              font-weight: 600;
             }
             .report-date { 
-              font-size: 16px; 
-              margin-bottom: 8px; 
+              font-size: ${isWideTable ? '9px' : '11px'}; 
+              margin-bottom: ${isWideTable ? '3px' : '5px'}; 
               color: #444; 
               font-style: italic;
               font-weight: 500;
             }
             .total-space { 
-              font-size: 18px; 
-              margin-top: 15px; 
+              font-size: ${isWideTable ? '10px' : '12px'}; 
+              margin-top: ${isWideTable ? '6px' : '10px'}; 
               font-weight: bold; 
               color: #1e40af; 
               background: #dbeafe;
-              padding: 12px 20px;
-              border-radius: 10px;
+              padding: ${isWideTable ? '6px 10px' : '8px 12px'};
+              border-radius: 6px;
               display: inline-block;
               border: 2px solid #2563eb;
             }
             .section-header { 
-              font-size: 26px; 
+              font-size: ${isWideTable ? '14px' : '18px'}; 
               font-weight: bold; 
-              margin: 35px 0 25px 0; 
-              padding: 16px 20px; 
+              margin: ${isWideTable ? '15px 0 10px 0' : '20px 0 15px 0'}; 
+              padding: ${isWideTable ? '8px 12px' : '12px 16px'}; 
               background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%); 
-              border-left: 8px solid #1e40af; 
-              border-radius: 10px;
-              box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+              border-left: 6px solid #1e40af; 
+              border-radius: 6px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.15);
               color: #000;
             }
             .report-table { 
               width: 100%; 
               border-collapse: collapse; 
-              margin-bottom: 35px; 
-              font-size: 13px; 
-              box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-              border-radius: 10px;
+              margin-bottom: ${isWideTable ? '15px' : '20px'}; 
+              font-size: ${isWideTable ? '8px' : '10px'}; 
+              box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+              border-radius: 6px;
               overflow: hidden;
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
             .report-table th, .report-table td { 
-              border: 2px solid #9ca3af; 
-              padding: 12px 10px; 
+              border: 1px solid #9ca3af; 
+              padding: ${isWideTable ? '4px 2px' : '6px 4px'}; 
               text-align: left; 
               vertical-align: middle; 
             }
@@ -450,9 +457,10 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               color: white !important;
               font-weight: bold; 
               text-transform: uppercase; 
-              font-size: 12px; 
-              letter-spacing: 1px;
+              font-size: ${isWideTable ? '7px' : '9px'}; 
+              letter-spacing: 0.5px;
               text-align: center;
+              padding: ${isWideTable ? '6px 2px' : '8px 4px'};
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
@@ -466,11 +474,11 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             .service-count {
               background: #bfdbfe !important;
               color: #1e40af !important;
-              padding: 6px 12px;
-              border-radius: 15px;
-              font-size: 14px;
+              padding: ${isWideTable ? '3px 6px' : '4px 8px'};
+              border-radius: 10px;
+              font-size: ${isWideTable ? '9px' : '11px'};
               font-weight: 700;
-              margin-left: 10px;
+              margin-left: ${isWideTable ? '6px' : '8px'};
               border: 2px solid #2563eb;
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
@@ -479,11 +487,11 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             .backup-count {
               background: #bbf7d0 !important;
               color: #166534 !important;
-              padding: 6px 12px;
-              border-radius: 15px;
-              font-size: 14px;
+              padding: ${isWideTable ? '3px 6px' : '4px 8px'};
+              border-radius: 10px;
+              font-size: ${isWideTable ? '9px' : '11px'};
               font-weight: 700;
-              margin-left: 10px;
+              margin-left: ${isWideTable ? '6px' : '8px'};
               border: 2px solid #16a34a;
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
@@ -491,14 +499,14 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             }
             .report-footer { 
               text-align: center; 
-              margin-top: 45px; 
-              font-size: 14px; 
+              margin-top: ${isWideTable ? '15px' : '25px'}; 
+              font-size: ${isWideTable ? '8px' : '10px'}; 
               color: #444; 
-              border-top: 3px solid #d1d5db; 
-              padding-top: 25px; 
+              border-top: 2px solid #d1d5db; 
+              padding-top: ${isWideTable ? '10px' : '15px'}; 
               background: #f8fafc !important;
-              border-radius: 10px;
-              padding: 25px;
+              border-radius: 6px;
+              padding: ${isWideTable ? '10px' : '15px'};
               font-weight: 500;
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
@@ -506,23 +514,38 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             }
             @page { 
               size: A4 landscape; 
-              margin: 12mm; 
+              margin: ${isWideTable ? '5mm' : '8mm'}; 
             }
             @media print { 
               body { 
                 margin: 0; 
+                transform: scale(${isWideTable ? '0.85' : '0.95'});
+                transform-origin: top left;
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
                 print-color-adjust: exact !important;
               } 
               .no-print { display: none; } 
-              .report-table { page-break-inside: avoid; }
+              .report-table { 
+                page-break-inside: avoid; 
+                width: 100%;
+              }
               .section-header { page-break-after: avoid; }
               * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
+            }
+            /* Auto-fit table width */
+            .report-table {
+              table-layout: fixed;
+              width: 100%;
+            }
+            .report-table th,
+            .report-table td {
+              word-wrap: break-word;
+              overflow-wrap: break-word;
             }
           </style>
         </head>
@@ -532,12 +555,12 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             <div class="report-title">Cloud Infrastructure Status Report</div>
             <div class="report-subtitle">${cloudData.reportTitle || 'Cloud Status Report'}</div>
             <div class="report-subtitle">${backupData.reportTitle || 'Backup Server Cronjob Status'}</div>
-            <div class="report-date">Cloud Services: ${formatDate(cloudData.reportDates?.startDate)} - ${formatDate(cloudData.reportDates?.endDate)}</div>
-            <div class="report-date">Backup Servers: ${formatDate(backupData.reportDates?.startDate)} - ${formatDate(backupData.reportDates?.endDate)}</div>
-            ${cloudData.totalSpaceUsed ? `<div class="total-space">📊 Total Space Used: ${cloudData.totalSpaceUsed}</div>` : ''}
+            <div class="report-date">Cloud: ${formatDate(cloudData.reportDates?.startDate)} - ${formatDate(cloudData.reportDates?.endDate)}</div>
+            <div class="report-date">Backup: ${formatDate(backupData.reportDates?.startDate)} - ${formatDate(backupData.reportDates?.endDate)}</div>
+            ${cloudData.totalSpaceUsed ? `<div class="total-space">📊 Total Space: ${cloudData.totalSpaceUsed}</div>` : ''}
           </div>
           
-          <div class="section-header">☁️ ${cloudData.reportTitle || 'Cloud Services Status'}<span class="service-count">${cloudData.rows.length} services</span></div>
+          <div class="section-header">☁️ ${cloudData.reportTitle || 'Cloud Services'}<span class="service-count">${cloudData.rows.length}</span></div>
           <table class="report-table">
             <thead>
               <tr>
@@ -549,7 +572,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             </tbody>
           </table>
           
-          <div class="section-header">🗄️ ${backupData.reportTitle || 'Backup Server Cronjob Status'}<span class="backup-count">${backupData.rows.length} servers</span></div>
+          <div class="section-header">🗄️ ${backupData.reportTitle || 'Backup Servers'}<span class="backup-count">${backupData.rows.length}</span></div>
           <table class="report-table">
             <thead>
               <tr>
@@ -561,12 +584,17 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             </tbody>
           </table>
           
+          <div class="report-footer">
+            <p>Generated: ${new Date().toLocaleString()} | Cloud: ${cloudData.rows.length} | Backup: ${backupData.rows.length}${cloudData.totalSpaceUsed ? ` | Space: ${cloudData.totalSpaceUsed}` : ''}</p>
+            <p>BizTras Cloud Infrastructure Management System</p>
+          </div>
+          
           <script>
             window.onload = function() {
               setTimeout(function() {
                 window.print();
                 window.close();
-              }, 1000);
+              }, 500);
             };
           </script>
         </body>
@@ -582,7 +610,11 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
           <button
             onClick={() => navigate('/cloud-dashboard')}
-            className="btn btn-secondary"
+            className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+              isDark 
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+            }`}
           >
             <FiArrowLeft className="mr-2" />
             Back to Edit
@@ -590,19 +622,19 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
           
           <button
             onClick={handlePrint}
-            className="btn btn-primary"
+            className="inline-flex items-center px-6 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
           >
             <FiPrinter className="mr-2" />
             Print Report
           </button>
         </div>
 
-        <div className={`card overflow-hidden ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+        <div className={`rounded-xl shadow-lg overflow-hidden ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
           <div className="text-center py-8 px-6 border-b border-gray-200 dark:border-gray-700">
             <img 
               src="./biztras.png" 
               alt="BizTras Logo" 
-              className="w-24 h-24 mx-auto mb-4 rounded-lg shadow-lg"
+              className="w-20 h-20 mx-auto mb-4 rounded-lg shadow-lg"
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
@@ -719,7 +751,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             isDark ? 'bg-gray-700/50' : 'bg-gray-50'
           }`}>
             <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Generated on {new Date().toLocaleString()}
+              Generated on {new Date().toLocaleString()} • 
               Cloud Services: {cloudData.rows.length} • 
               Backup Servers: {backupData.rows.length}
               {cloudData.totalSpaceUsed && ` • Total Space: ${cloudData.totalSpaceUsed}`}
