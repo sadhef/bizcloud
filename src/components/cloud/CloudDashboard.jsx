@@ -489,8 +489,6 @@ const CloudDashboard = () => {
       }
       setError(null);
       
-      console.log('Fetching fresh data...');
-      
       // Fetch both datasets
       const [cloudResponse, backupResponse] = await Promise.all([
         api.get('/cloud-report/data'),
@@ -500,10 +498,6 @@ const CloudDashboard = () => {
       // Process cloud data
       if (cloudResponse?.data) {
         const cloudData = cloudResponse.data;
-        console.log('Cloud data received:', { 
-          rowsCount: cloudData.rows?.length || 0, 
-          columnsCount: cloudData.columns?.length || 0
-        });
         
         setCloudReportTitle(cloudData.reportTitle || 'Cloud Status Report');
         
@@ -531,10 +525,6 @@ const CloudDashboard = () => {
       // Process backup data
       if (backupResponse?.data) {
         const backupData = backupResponse.data;
-        console.log('Backup data received:', { 
-          rowsCount: backupData.rows?.length || 0, 
-          columnsCount: backupData.columns?.length || 0
-        });
         
         setBackupReportTitle(backupData.reportTitle || 'Backup Server Cronjob Status');
         
@@ -556,11 +546,8 @@ const CloudDashboard = () => {
         setBackupRows([...processedBackupRows]);
       }
       
-      setHasUnsavedChanges(false);
-      console.log('Data fetch completed successfully');
-      
+      setHasUnsavedChanges(false);      
     } catch (err) {
-      console.error('Error fetching cloud dashboard data:', err);
       setError('Failed to load dashboard data');
       toast.error('Failed to load dashboard data');
     } finally {
@@ -583,7 +570,6 @@ const CloudDashboard = () => {
     try {
       setSaveLoading(true);
       
-      console.log('Manual save initiated...');
       
       // Clean rows data (remove internal React keys like 'id')
       const cleanCloudRows = cloudRows.map(row => {
@@ -611,8 +597,6 @@ const CloudDashboard = () => {
         rows: cleanBackupRows
       };
       
-      console.log('Saving cloud data:', { rowsCount: cleanCloudRows.length, columnsCount: cloudColumns.length });
-      console.log('Saving backup data:', { rowsCount: cleanBackupRows.length, columnsCount: backupColumns.length });
       
       // Save data
       const [cloudResult, backupResult] = await Promise.all([
@@ -620,10 +604,6 @@ const CloudDashboard = () => {
         api.post('/backup-server/save', backupPayload)
       ]);
       
-      console.log('Cloud save result:', cloudResult);
-      console.log('Backup save result:', backupResult);
-      
-      console.log('Data saved successfully, refreshing...');
       
       // Fetch fresh data after save to ensure UI shows latest server data
       await fetchData(false); // Don't show loading state for this refresh
@@ -647,12 +627,10 @@ const CloudDashboard = () => {
     setError(null);
     
     try {
-      console.log('Force refresh initiated...');
       await fetchData(true); // Force fresh fetch with loading state
       toast.success('Data refreshed successfully!');
       
     } catch (error) {
-      console.error('Force refresh failed:', error);
       toast.error('Failed to refresh data');
     } finally {
       setRefreshing(false);
@@ -668,7 +646,6 @@ const CloudDashboard = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && !loading && !saveLoading) {
-        console.log('Tab became visible, refreshing data...');
         fetchData(false);
       }
     };

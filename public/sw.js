@@ -29,19 +29,16 @@ const LONG_CACHE_API_PATTERNS = [
 
 // Install event - cache core resources
 self.addEventListener('install', (event) => {
-  console.log('[SW] Install event');
-  
   event.waitUntil(
     (async () => {
       try {
         const cache = await caches.open(CACHE_NAME);
-        console.log('[SW] Caching core files');
         await cache.addAll(CORE_CACHE_FILES);
         
         // Force activation of new service worker
         self.skipWaiting();
       } catch (error) {
-        console.error('[SW] Cache failed during install:', error);
+        // Cache failed during install - handled silently
       }
     })()
   );
@@ -49,8 +46,6 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activate event');
-  
   event.waitUntil(
     (async () => {
       try {
@@ -62,7 +57,6 @@ self.addEventListener('activate', (event) => {
         
         await Promise.all(
           oldCaches.map(name => {
-            console.log('[SW] Deleting old cache:', name);
             return caches.delete(name);
           })
         );
@@ -70,7 +64,7 @@ self.addEventListener('activate', (event) => {
         // Take control of all clients
         self.clients.claim();
       } catch (error) {
-        console.error('[SW] Activation failed:', error);
+        // Activation failed - handled silently
       }
     })()
   );
@@ -78,8 +72,6 @@ self.addEventListener('activate', (event) => {
 
 // Push event - handle incoming push notifications
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push notification received:', event);
-  
   try {
     let notificationData = {
       title: 'BizTras Cloud',
@@ -93,9 +85,7 @@ self.addEventListener('push', (event) => {
     if (event.data) {
       try {
         notificationData = event.data.json();
-        console.log('[SW] Parsed notification data:', notificationData);
       } catch (error) {
-        console.error('[SW] Error parsing push data:', error);
         notificationData.body = event.data.text();
       }
     }
@@ -127,14 +117,10 @@ self.addEventListener('push', (event) => {
       lang: 'en'
     };
 
-    console.log('[SW] Showing notification:', notificationData.title, notificationOptions);
-
     event.waitUntil(
       self.registration.showNotification(notificationData.title, notificationOptions)
     );
   } catch (error) {
-    console.error('[SW] Push event error:', error);
-    
     // Show fallback notification
     event.waitUntil(
       self.registration.showNotification('BizTras Cloud', {
@@ -154,83 +140,43 @@ self.addEventListener('push', (event) => {
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification click received:', event);
-  
-  // Close the notification
   event.notification.close();
   
-  const action = event.action;
-  const data = event.notification.data || {};
-  
-  // If user clicked the close action, just close
-  if (action === 'close') {
-    console.log('[SW] Notification closed by user action');
-    return;
-  }
-  
-  // Handle notification click and opening the app
   event.waitUntil(
     (async () => {
       try {
-        // Get all window clients
-        const clients = await self.clients.matchAll({
-          type: 'window',
-          includeUncontrolled: true
-        });
+        const clients = await self.clients.matchAll({ type: 'window' });
         
-        console.log('[SW] Found clients:', clients.length);
-        
-        // Determine target URL
-        let targetUrl = '/dashboard';
-        if (data.url) {
-          targetUrl = data.url;
-        } else if (action === 'open' || !action) {
-          targetUrl = '/dashboard';
+        if (event.action === 'close') {
+          return;
         }
         
-        // Check if there's already a window open
+        // Handle open action or notification body click
+        const urlToOpen = event.notification.data?.url || '/dashboard';
+        
+        // Check if app is already open
         for (const client of clients) {
           const clientUrl = new URL(client.url);
-          const selfUrl = new URL(self.location.origin);
-          
-          if (clientUrl.origin === selfUrl.origin) {
-            console.log('[SW] Focusing existing window:', client.url);
-            
-            // Focus existing window
+          if (clientUrl.pathname === urlToOpen) {
             await client.focus();
-            
-            // Navigate to target URL if different
-            if (!client.url.includes(targetUrl) && targetUrl !== '/dashboard') {
-              client.postMessage({
-                type: 'NOTIFICATION_CLICK',
-                action,
-                data,
-                targetUrl
-              });
-            }
-            
             return;
           }
         }
         
-        // No existing window found, open new one
-        console.log('[SW] Opening new window:', targetUrl);
-        const newClient = await self.clients.openWindow(targetUrl);
-        
-        if (newClient) {
-          console.log('[SW] New window opened successfully');
+        // Open new window/tab
+        const newWindow = await self.clients.openWindow(urlToOpen);
+        if (newWindow) {
+          // Window opened successfully
         } else {
-          console.error('[SW] Failed to open new window');
+          // Failed to open new window - handled silently
         }
         
       } catch (error) {
-        console.error('[SW] Notification click handling failed:', error);
-        
         // Fallback: try to open dashboard
         try {
           await self.clients.openWindow('/dashboard');
         } catch (fallbackError) {
-          console.error('[SW] Fallback navigation failed:', fallbackError);
+          // Fallback navigation failed - handled silently
         }
       }
     })()
@@ -239,20 +185,15 @@ self.addEventListener('notificationclick', (event) => {
 
 // Notification close event
 self.addEventListener('notificationclose', (event) => {
-  console.log('[SW] Notification closed:', event.notification.tag);
-  
   // Track notification dismissal if needed
   const data = event.notification.data || {};
   if (data.trackDismissal) {
-    console.log('[SW] Tracking notification dismissal');
     // Could send analytics here if needed
   }
 });
 
 // Message event - handle messages from main thread
 self.addEventListener('message', (event) => {
-  console.log('[SW] Message received:', event.data);
-  
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
@@ -298,7 +239,7 @@ self.addEventListener('message', (event) => {
             });
           }
         } catch (error) {
-          console.error('[SW] Navigation request failed:', error);
+          // Navigation request failed - handled silently
         }
       })()
     );
@@ -344,34 +285,36 @@ async function handleFetch(request) {
     
     // Strategy 4: Other API calls - Network Only (no cache for save operations)
     if (url.pathname.startsWith('/api/')) {
-      console.log('[SW] Network only for API:', request.url);
       return await fetch(request);
     }
     
     // Strategy 5: Static assets - Cache First
     if (url.pathname.startsWith('/static/') || 
-        url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$/)) {
+        url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
       return await cacheFirst(request, CACHE_NAME);
     }
     
-    // Strategy 6: Navigation - Network First with offline fallback
-    if (request.mode === 'navigate') {
-      return await navigationHandler(request);
-    }
-    
-    // Default: Network only
-    return await fetch(request);
+    // Strategy 6: HTML pages - Network First
+    return await networkFirst(request, CACHE_NAME);
     
   } catch (error) {
-    console.error('[SW] Fetch failed:', error);
+    // Return cached version or offline page
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
     
-    // Return offline page for navigation requests
-    if (request.mode === 'navigate') {
-      const cache = await caches.open(CACHE_NAME);
-      return await cache.match(OFFLINE_PAGE) || new Response('Offline');
+    if (cached) {
+      return cached;
     }
     
-    return new Response('Network error', { status: 408 });
+    // Return offline page for navigation requests
+    if (request.destination === 'document') {
+      const offlinePage = await cache.match(OFFLINE_PAGE);
+      if (offlinePage) {
+        return offlinePage;
+      }
+    }
+    
+    throw error;
   }
 }
 
@@ -381,13 +324,10 @@ async function cacheFirst(request, cacheName) {
   const cached = await cache.match(request);
   
   if (cached) {
-    console.log('[SW] Cache hit:', request.url);
     return cached;
   }
   
-  console.log('[SW] Cache miss, fetching:', request.url);
   const response = await fetch(request);
-  
   if (response.status === 200) {
     cache.put(request, response.clone());
   }
@@ -395,12 +335,30 @@ async function cacheFirst(request, cacheName) {
   return response;
 }
 
+// Network First strategy
+async function networkFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  
+  try {
+    const response = await fetch(request);
+    if (response.status === 200) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await cache.match(request);
+    if (cached) {
+      return cached;
+    }
+    throw error;
+  }
+}
+
 // Network First with short cache (30 seconds)
 async function networkFirstShortCache(request, cacheName) {
   const cache = await caches.open(cacheName);
   
   try {
-    console.log('[SW] Network first (short cache):', request.url);
     const response = await fetch(request);
     
     if (response.status === 200) {
@@ -421,7 +379,6 @@ async function networkFirstShortCache(request, cacheName) {
     
     return response;
   } catch (error) {
-    console.log('[SW] Network failed, trying cache:', request.url);
     const cached = await cache.match(request);
     
     if (cached) {
@@ -432,13 +389,11 @@ async function networkFirstShortCache(request, cacheName) {
         const isStale = (Date.now() - parseInt(cacheTimestamp)) > 30000; // 30 seconds
         
         if (isStale) {
-          console.log('[SW] Cache is stale, removing:', request.url);
           cache.delete(request);
           throw error; // Don't use stale cache
         }
       }
       
-      console.log('[SW] Using cached response:', request.url);
       return cached;
     }
     
@@ -451,7 +406,6 @@ async function networkFirstLongCache(request, cacheName) {
   const cache = await caches.open(cacheName);
   
   try {
-    console.log('[SW] Network first (long cache):', request.url);
     const response = await fetch(request);
     
     if (response.status === 200) {
@@ -472,7 +426,6 @@ async function networkFirstLongCache(request, cacheName) {
     
     return response;
   } catch (error) {
-    console.log('[SW] Network failed, trying cache:', request.url);
     const cached = await cache.match(request);
     
     if (cached) {
@@ -483,13 +436,27 @@ async function networkFirstLongCache(request, cacheName) {
         const isStale = (Date.now() - parseInt(cacheTimestamp)) > 300000; // 5 minutes
         
         if (isStale) {
-          console.log('[SW] Cache is stale, removing:', request.url);
-          cache.delete(request);
-          throw error; // Don't use stale cache
+          // Try to update in background but still serve cached version
+          fetch(request).then(response => {
+            if (response.status === 200) {
+              const headers = new Headers(response.headers);
+              headers.set('sw-cache-timestamp', Date.now().toString());
+              headers.set('sw-cache-type', 'long');
+              
+              const updatedResponse = new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: headers
+              });
+              
+              cache.put(request, updatedResponse);
+            }
+          }).catch(() => {
+            // Background update failed - handled silently
+          });
         }
       }
       
-      console.log('[SW] Using cached response:', request.url);
       return cached;
     }
     
@@ -497,51 +464,31 @@ async function networkFirstLongCache(request, cacheName) {
   }
 }
 
-// Navigation handler with offline support
-async function navigationHandler(request) {
-  try {
-    const response = await fetch(request);
-    return response;
-  } catch (error) {
-    console.log('[SW] Navigation offline, serving app shell');
-    const cache = await caches.open(CACHE_NAME);
-    return await cache.match('/') || new Response('Offline', { status: 503 });
-  }
-}
-
-// Clean up stale cache entries periodically
+// Cleanup stale cache entries
 async function cleanupStaleCache() {
-  try {
-    const cache = await caches.open(RUNTIME_CACHE);
-    const requests = await cache.keys();
-    const now = Date.now();
-    
-    for (const request of requests) {
-      const response = await cache.match(request);
-      if (response) {
-        const cacheTimestamp = response.headers.get('sw-cache-timestamp');
-        const cacheType = response.headers.get('sw-cache-type');
+  const cache = await caches.open(RUNTIME_CACHE);
+  const requests = await cache.keys();
+  
+  for (const request of requests) {
+    const response = await cache.match(request);
+    if (response) {
+      const timestamp = response.headers.get('sw-cache-timestamp');
+      const cacheType = response.headers.get('sw-cache-type');
+      
+      if (timestamp && cacheType) {
+        const age = Date.now() - parseInt(timestamp);
+        const maxAge = cacheType === 'short' ? 30000 : 300000; // 30s or 5m
         
-        if (cacheTimestamp) {
-          const age = now - parseInt(cacheTimestamp);
-          const maxAge = cacheType === 'short' ? 30000 : 300000; // 30s or 5min
-          
-          if (age > maxAge) {
-            console.log('[SW] Cleaning up stale cache entry:', request.url);
-            await cache.delete(request);
-          }
+        if (age > maxAge) {
+          await cache.delete(request);
         }
       }
     }
-  } catch (error) {
-    console.error('[SW] Cache cleanup failed:', error);
   }
 }
 
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag);
-  
+// Background sync event
+self.addEventListener('sync', async (event) => {
   if (event.tag === 'sync-cloud-data') {
     event.waitUntil(syncCloudData());
   }
@@ -551,33 +498,22 @@ self.addEventListener('sync', (event) => {
   }
 });
 
+// Background sync function
 async function syncCloudData() {
   try {
-    console.log('[SW] Syncing cloud data...');
+    // Sync cloud report data
+    await fetch('/api/cloud-report/data');
     
-    // Clear stale cache entries before sync
-    await cleanupStaleCache();
-    
-    // Notify all clients that sync is happening
-    const clients = await self.clients.matchAll();
-    clients.forEach(client => {
-      client.postMessage({
-        type: 'SYNC_START',
-        message: 'Syncing latest data...'
-      });
-    });
-    
-    console.log('[SW] Cloud data sync completed');
+    // Sync backup server data
+    await fetch('/api/backup-server/data');
     
   } catch (error) {
-    console.error('[SW] Sync failed:', error);
+    // Sync failed - handled silently
   }
 }
 
 // Periodic background sync (if supported)
 self.addEventListener('periodicsync', (event) => {
-  console.log('[SW] Periodic sync:', event.tag);
-  
   if (event.tag === 'sync-cloud-data') {
     event.waitUntil(syncCloudData());
   }
@@ -594,17 +530,15 @@ setInterval(() => {
 
 // Error handling
 self.addEventListener('error', (event) => {
-  console.error('[SW] Error:', event.error);
+  // Error handled silently
 });
 
 self.addEventListener('unhandledrejection', (event) => {
-  console.error('[SW] Unhandled rejection:', event.reason);
+  // Unhandled rejection handled silently
 });
 
 // Push subscription change event
 self.addEventListener('pushsubscriptionchange', (event) => {
-  console.log('[SW] Push subscription changed');
-  
   event.waitUntil(
     (async () => {
       try {
@@ -613,8 +547,6 @@ self.addEventListener('pushsubscriptionchange', (event) => {
           userVisibleOnly: true,
           applicationServerKey: event.oldSubscription.options.applicationServerKey
         });
-        
-        console.log('[SW] New subscription created:', newSubscription);
         
         // Send new subscription to server
         await fetch('/api/push-notifications/subscribe', {
@@ -633,12 +565,9 @@ self.addEventListener('pushsubscriptionchange', (event) => {
           })
         });
         
-        console.log('[SW] Subscription updated on server');
       } catch (error) {
-        console.error('[SW] Failed to handle subscription change:', error);
+        // Failed to handle subscription change - handled silently
       }
     })()
   );
 });
-
-console.log('[SW] Service Worker v2.2.0 loaded with Push Notification support and enhanced caching');

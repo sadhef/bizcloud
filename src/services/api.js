@@ -30,16 +30,13 @@ api.interceptors.request.use(
           config.headers.Authorization = `Bearer ${token}`;
         }
       } catch (error) {
-        console.error('Error parsing auth token:', error);
         clearStoredAuth();
       }
     }
     
-    console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error('[API] Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -47,12 +44,9 @@ api.interceptors.request.use(
 // Response interceptor - SIMPLIFIED
 api.interceptors.response.use(
   (response) => {
-    console.log(`[API] ${response.config.method?.toUpperCase()} ${response.config.url} - Success`);
     return response.data;
   },
   (error) => {
-    console.error(`[API] ${error.config?.method?.toUpperCase()} ${error.config?.url} - Failed:`, error.response?.status || 'Network Error');
-
     // Handle network errors
     if (!error.response) {
       toast.error('Network error. Please check your connection.');
@@ -65,7 +59,6 @@ api.interceptors.response.use(
     // Handle different status codes
     switch (status) {
       case 401:
-        console.log('[API] 401 Unauthorized - clearing auth data');
         clearStoredAuth();
         delete api.defaults.headers.common['Authorization'];
         
@@ -93,10 +86,8 @@ api.interceptors.response.use(
 api.healthCheck = async () => {
   try {
     const response = await api.get('/health', { timeout: 5000 });
-    console.log('[API] Health check passed');
     return true;
   } catch (error) {
-    console.error('[API] Health check failed:', error);
     return false;
   }
 };
