@@ -14,10 +14,143 @@ import {
   FiMove,
   FiAlertTriangle,
   FiEdit2,
-  FiClock
+  FiClock,
+  FiMaximize2
 } from 'react-icons/fi';
 import api from '../../services/api';
 import CloudPrintPreview from './CloudPrintPreview';
+
+// Enhanced Input Component with better sizing
+const EnhancedInput = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  type = "text", 
+  isDark, 
+  isExpanded = false,
+  minWidth = "150px",
+  className = ""
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tempValue, setTempValue] = useState(value || '');
+
+  useEffect(() => {
+    setTempValue(value || '');
+  }, [value]);
+
+  const handleSave = () => {
+    onChange(tempValue);
+    setIsModalOpen(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+    if (e.key === 'Escape') {
+      setTempValue(value || '');
+      setIsModalOpen(false);
+    }
+  };
+
+  const shouldShowExpandButton = value?.length > 25 || placeholder?.toLowerCase().includes('remark');
+
+  return (
+    <>
+      <div className="relative group">
+        <input
+          type={type}
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full px-3 py-2.5 text-sm border rounded-lg transition-all duration-200 ${
+            isDark 
+              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-primary-500 focus:bg-gray-600' 
+              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-600 focus:border-primary-500 focus:bg-gray-50'
+          } focus:outline-none focus:ring-2 focus:ring-primary-500/20 hover:border-gray-400 dark:hover:border-gray-500 ${className}`}
+          style={{ 
+            minWidth: minWidth,
+            maxWidth: '300px'
+          }}
+        />
+        
+        {shouldShowExpandButton && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity ${
+              isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+            }`}
+            title="Expand to edit"
+          >
+            <FiMaximize2 size={12} />
+          </button>
+        )}
+      </div>
+
+      {/* Expanded Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className={`w-full max-w-lg mx-auto rounded-xl shadow-2xl border ${
+            isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+          }`}>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Edit {placeholder || 'Value'}
+                </h3>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDark ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              
+              <textarea
+                value={tempValue}
+                onChange={(e) => setTempValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                rows={4}
+                className={`w-full px-4 py-3 border rounded-lg resize-none ${
+                  isDark 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-primary-500' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-600 focus:border-primary-500'
+                } focus:outline-none focus:ring-2 focus:ring-primary-500/20`}
+                autoFocus
+              />
+              
+              <div className="flex justify-end space-x-3 mt-4">
+                <button
+                  onClick={() => {
+                    setTempValue(value || '');
+                    setIsModalOpen(false);
+                  }}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="btn btn-primary"
+                >
+                  Save
+                </button>
+              </div>
+              
+              <p className={`text-xs mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                Press Escape to cancel • Ctrl+Enter to save
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 // Drag and Drop Column Component
 const DraggableColumn = ({ column, index, onRemove, onDragStart, onDragOver, onDrop, isDark, isBeingDragged }) => {
@@ -52,7 +185,7 @@ const DraggableColumn = ({ column, index, onRemove, onDragStart, onDragOver, onD
   );
 };
 
-// Enhanced Status Select Component
+// Enhanced Status Select Component with better sizing
 const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false, isServerStatus = false }) => {
   const getBackgroundColor = (val) => {
     if (!val) return isDark ? '#374151' : '#ffffff';
@@ -107,9 +240,11 @@ const StyledStatusSelect = ({ value, onChange, isDark, isCloudStatus = false, is
         backgroundColor,
         color: textColor,
         fontWeight: value ? 'bold' : 'normal',
-        transition: 'all 0.2s ease-in-out'
+        transition: 'all 0.2s ease-in-out',
+        minWidth: '120px',
+        maxWidth: '160px'
       }}
-      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-center transition-all duration-200 ${
+      className={`w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-center transition-all duration-200 text-sm ${
         isDark ? 'border-gray-600' : 'border-gray-300'
       }`}
     >
@@ -931,11 +1066,30 @@ const CloudDashboard = () => {
     };
   };
 
-  // Cell rendering
+  // Get column width based on column type
+  const getColumnWidth = (column) => {
+    const isStatusColumn = column === 'Status' || column === 'SERVER STATUS';
+    const isWeekdayColumn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
+    const isSSLColumn = column === 'SSL Expiry';
+    const isServerColumn = column === 'Server';
+    const isRemarksColumn = column.toLowerCase().includes('remark');
+    const isSpaceColumn = column.toLowerCase().includes('space');
+
+    if (isServerColumn) return '200px';
+    if (isRemarksColumn) return '250px';
+    if (isStatusColumn) return '140px';
+    if (isWeekdayColumn) return '120px';
+    if (isSSLColumn) return '150px';
+    if (isSpaceColumn) return '120px';
+    return '150px';
+  };
+
+  // Cell rendering with enhanced inputs
   const renderCloudCell = (row, column, rowIndex) => {
     const isStatusColumn = column === 'Status';
     const isWeekdayColumn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
     const isSSLColumn = column === 'SSL Expiry';
+    const isRemarksColumn = column.toLowerCase().includes('remark');
 
     if (isStatusColumn || isWeekdayColumn) {
       return (
@@ -952,17 +1106,22 @@ const CloudDashboard = () => {
           type="date"
           value={row[column] || ''}
           onChange={(e) => handleCloudCellChange(rowIndex, column, e.target.value)}
-          className="input w-full"
+          className={`w-full px-3 py-2.5 text-sm border rounded-lg transition-all duration-200 ${
+            isDark 
+              ? 'bg-gray-700 border-gray-600 text-white focus:border-primary-500' 
+              : 'bg-white border-gray-300 text-gray-900 focus:border-primary-500'
+          } focus:outline-none focus:ring-2 focus:ring-primary-500/20`}
+          style={{ minWidth: '140px' }}
         />
       );
     } else {
       return (
-        <input
-          type="text"
+        <EnhancedInput
           value={row[column] || ''}
-          onChange={(e) => handleCloudCellChange(rowIndex, column, e.target.value)}
-          className="input w-full"
+          onChange={(newValue) => handleCloudCellChange(rowIndex, column, newValue)}
           placeholder={`Enter ${column}`}
+          isDark={isDark}
+          minWidth={isRemarksColumn ? '200px' : '150px'}
         />
       );
     }
@@ -971,6 +1130,7 @@ const CloudDashboard = () => {
   const renderBackupCell = (row, column, rowIndex) => {
     const isWeekdayColumn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
     const isServerStatusColumn = column === 'SERVER STATUS';
+    const isRemarksColumn = column.toLowerCase().includes('remark');
 
     if (isServerStatusColumn) {
       return (
@@ -992,12 +1152,12 @@ const CloudDashboard = () => {
       );
     } else {
       return (
-        <input
-          type="text"
+        <EnhancedInput
           value={row[column] || ''}
-          onChange={(e) => handleBackupCellChange(rowIndex, column, e.target.value)}
-          className="input w-full"
+          onChange={(newValue) => handleBackupCellChange(rowIndex, column, newValue)}
           placeholder={`Enter ${column}`}
+          isDark={isDark}
+          minWidth={isRemarksColumn ? '200px' : '150px'}
         />
       );
     }
@@ -1029,7 +1189,7 @@ const CloudDashboard = () => {
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} py-6`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 space-y-4 sm:space-y-0">
           <div>
@@ -1220,7 +1380,7 @@ const CloudDashboard = () => {
               </div>
             </div>
 
-            {/* Cloud Data Grid */}
+            {/* Cloud Data Grid - Enhanced with better sizing */}
             <div className="card overflow-hidden">
               <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
@@ -1236,21 +1396,29 @@ const CloudDashboard = () => {
                 </div>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
+              {/* Improved table with better spacing */}
+              <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+                <table className={`w-full border-collapse ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`} style={{ minWidth: 'max-content' }}>
                   <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
                     <tr>
-                      <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDark ? 'text-gray-300' : 'text-gray-500'
-                      }`}>
+                      <th 
+                        className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                          isDark ? 'text-gray-300' : 'text-gray-500'
+                        }`}
+                        style={{ minWidth: '80px', width: '80px' }}
+                      >
                         Actions
                       </th>
                       {cloudColumns.map((column, index) => (
                         <th
                           key={`header-${index}-${column}`}
-                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                          className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
                             isDark ? 'text-gray-300' : 'text-gray-500'
                           }`}
+                          style={{ 
+                            minWidth: getColumnWidth(column),
+                            width: getColumnWidth(column)
+                          }}
                         >
                           {column}
                         </th>
@@ -1260,17 +1428,24 @@ const CloudDashboard = () => {
                   <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
                     {cloudRows.map((row, rowIndex) => (
                       <tr key={row.id || `cloud-row-${rowIndex}`} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap" style={{ width: '80px' }}>
                           <button
                             onClick={() => handleRemoveCloudRow(rowIndex)}
-                            className="text-error-600 hover:text-error-900 transition-colors"
+                            className="text-error-600 hover:text-error-900 transition-colors p-2 rounded-lg hover:bg-error-50 dark:hover:bg-error-900/20"
                             title="Remove row"
                           >
                             <FiTrash2 size={16} />
                           </button>
                         </td>
                         {cloudColumns.map((column, colIndex) => (
-                          <td key={`cell-${rowIndex}-${colIndex}-${column}`} className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <td 
+                            key={`cell-${rowIndex}-${colIndex}-${column}`} 
+                            className="px-4 py-4"
+                            style={{ 
+                              minWidth: getColumnWidth(column),
+                              width: getColumnWidth(column)
+                            }}
+                          >
                             {renderCloudCell(row, column, rowIndex)}
                           </td>
                         ))}
@@ -1371,7 +1546,7 @@ const CloudDashboard = () => {
               </div>
             </div>
 
-            {/* Backup Data Grid */}
+            {/* Backup Data Grid - Enhanced with better sizing */}
             <div className="card overflow-hidden">
               <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
@@ -1387,19 +1562,27 @@ const CloudDashboard = () => {
                 </div>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
+              {/* Improved table with better spacing */}
+              <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+                <table className={`w-full border-collapse ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`} style={{ minWidth: 'max-content' }}>
                   <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
                     <tr>
-                      <th className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                        isDark ? 'text-gray-300' : 'text-gray-500'
-                      }`}>
+                      <th 
+                        className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                          isDark ? 'text-gray-300' : 'text-gray-500'
+                        }`}
+                        style={{ minWidth: '80px', width: '80px' }}
+                      >
                         Actions
                       </th>
                       {backupColumns.map((column, index) => (
                         <th
                           key={`backup-header-${index}-${column}`}
-                          className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}
+                          className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}
+                          style={{ 
+                            minWidth: getColumnWidth(column),
+                            width: getColumnWidth(column)
+                          }}
                         >
                           {column}
                         </th>
@@ -1409,17 +1592,24 @@ const CloudDashboard = () => {
                   <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
                     {backupRows.map((row, rowIndex) => (
                       <tr key={row.id || `backup-row-${rowIndex}`} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap" style={{ width: '80px' }}>
                           <button
                             onClick={() => handleRemoveBackupRow(rowIndex)}
-                            className="text-error-600 hover:text-error-900 transition-colors"
+                            className="text-error-600 hover:text-error-900 transition-colors p-2 rounded-lg hover:bg-error-50 dark:hover:bg-error-900/20"
                             title="Remove row"
                           >
                             <FiTrash2 size={16} />
                           </button>
                         </td>
                         {backupColumns.map((column, colIndex) => (
-                          <td key={`backup-cell-${rowIndex}-${colIndex}-${column}`} className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <td 
+                            key={`backup-cell-${rowIndex}-${colIndex}-${column}`} 
+                            className="px-4 py-4"
+                            style={{ 
+                              minWidth: getColumnWidth(column),
+                              width: getColumnWidth(column)
+                            }}
+                          >
                             {renderBackupCell(row, column, rowIndex)}
                           </td>
                         ))}
