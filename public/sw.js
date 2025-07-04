@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biztras-cloud-v2.1.0';
+const CACHE_NAME = 'biztras-cloud-v2.2.0';
 const RUNTIME_CACHE = 'biztras-runtime-v2';
 const OFFLINE_PAGE = '/offline.html';
 
@@ -17,7 +17,8 @@ const CORE_CACHE_FILES = [
 const SHORT_CACHE_API_PATTERNS = [
   /^\/api\/cloud-report\/data$/,
   /^\/api\/backup-server\/data$/,
-  /^\/api\/auth\/verify$/
+  /^\/api\/auth\/verify$/,
+  /^\/api\/push-notifications\//
 ];
 
 // API endpoints that can be cached longer
@@ -73,6 +74,235 @@ self.addEventListener('activate', (event) => {
       }
     })()
   );
+});
+
+// Push event - handle incoming push notifications
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received:', event);
+  
+  try {
+    let notificationData = {
+      title: 'BizTras Cloud',
+      body: 'You have a new notification',
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-192x192.png',
+      data: {}
+    };
+
+    // Parse notification data
+    if (event.data) {
+      try {
+        notificationData = event.data.json();
+        console.log('[SW] Parsed notification data:', notificationData);
+      } catch (error) {
+        console.error('[SW] Error parsing push data:', error);
+        notificationData.body = event.data.text();
+      }
+    }
+
+    // Enhanced notification options
+    const notificationOptions = {
+      body: notificationData.body,
+      icon: notificationData.icon || '/icons/icon-192x192.png',
+      badge: notificationData.badge || '/icons/icon-192x192.png',
+      data: notificationData.data || {},
+      actions: [
+        {
+          action: 'open',
+          title: 'Open App',
+          icon: '/icons/icon-192x192.png'
+        },
+        {
+          action: 'close',
+          title: 'Close'
+        }
+      ],
+      requireInteraction: false,
+      silent: false,
+      vibrate: [200, 100, 200],
+      tag: 'biztras-notification',
+      renotify: true,
+      timestamp: Date.now(),
+      dir: 'auto',
+      lang: 'en'
+    };
+
+    console.log('[SW] Showing notification:', notificationData.title, notificationOptions);
+
+    event.waitUntil(
+      self.registration.showNotification(notificationData.title, notificationOptions)
+    );
+  } catch (error) {
+    console.error('[SW] Push event error:', error);
+    
+    // Show fallback notification
+    event.waitUntil(
+      self.registration.showNotification('BizTras Cloud', {
+        body: 'You have a new notification',
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-192x192.png',
+        actions: [
+          {
+            action: 'open',
+            title: 'Open App'
+          }
+        ]
+      })
+    );
+  }
+});
+
+// Notification click event
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification click received:', event);
+  
+  // Close the notification
+  event.notification.close();
+  
+  const action = event.action;
+  const data = event.notification.data || {};
+  
+  // If user clicked the close action, just close
+  if (action === 'close') {
+    console.log('[SW] Notification closed by user action');
+    return;
+  }
+  
+  // Handle notification click and opening the app
+  event.waitUntil(
+    (async () => {
+      try {
+        // Get all window clients
+        const clients = await self.clients.matchAll({
+          type: 'window',
+          includeUncontrolled: true
+        });
+        
+        console.log('[SW] Found clients:', clients.length);
+        
+        // Determine target URL
+        let targetUrl = '/dashboard';
+        if (data.url) {
+          targetUrl = data.url;
+        } else if (action === 'open' || !action) {
+          targetUrl = '/dashboard';
+        }
+        
+        // Check if there's already a window open
+        for (const client of clients) {
+          const clientUrl = new URL(client.url);
+          const selfUrl = new URL(self.location.origin);
+          
+          if (clientUrl.origin === selfUrl.origin) {
+            console.log('[SW] Focusing existing window:', client.url);
+            
+            // Focus existing window
+            await client.focus();
+            
+            // Navigate to target URL if different
+            if (!client.url.includes(targetUrl) && targetUrl !== '/dashboard') {
+              client.postMessage({
+                type: 'NOTIFICATION_CLICK',
+                action,
+                data,
+                targetUrl
+              });
+            }
+            
+            return;
+          }
+        }
+        
+        // No existing window found, open new one
+        console.log('[SW] Opening new window:', targetUrl);
+        const newClient = await self.clients.openWindow(targetUrl);
+        
+        if (newClient) {
+          console.log('[SW] New window opened successfully');
+        } else {
+          console.error('[SW] Failed to open new window');
+        }
+        
+      } catch (error) {
+        console.error('[SW] Notification click handling failed:', error);
+        
+        // Fallback: try to open dashboard
+        try {
+          await self.clients.openWindow('/dashboard');
+        } catch (fallbackError) {
+          console.error('[SW] Fallback navigation failed:', fallbackError);
+        }
+      }
+    })()
+  );
+});
+
+// Notification close event
+self.addEventListener('notificationclose', (event) => {
+  console.log('[SW] Notification closed:', event.notification.tag);
+  
+  // Track notification dismissal if needed
+  const data = event.notification.data || {};
+  if (data.trackDismissal) {
+    console.log('[SW] Tracking notification dismissal');
+    // Could send analytics here if needed
+  }
+});
+
+// Message event - handle messages from main thread
+self.addEventListener('message', (event) => {
+  console.log('[SW] Message received:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: CACHE_NAME });
+  }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      (async () => {
+        await cleanupStaleCache();
+        event.ports[0].postMessage({ success: true });
+      })()
+    );
+  }
+  
+  if (event.data && event.data.type === 'FORCE_REFRESH') {
+    event.waitUntil(
+      (async () => {
+        // Clear all runtime cache
+        const cache = await caches.open(RUNTIME_CACHE);
+        const requests = await cache.keys();
+        await Promise.all(requests.map(request => cache.delete(request)));
+        
+        event.ports[0].postMessage({ success: true });
+      })()
+    );
+  }
+  
+  // Handle navigation messages from notification clicks
+  if (event.data && event.data.type === 'NAVIGATION_REQUEST') {
+    event.waitUntil(
+      (async () => {
+        try {
+          const clients = await self.clients.matchAll({ type: 'window' });
+          if (clients.length > 0) {
+            // Focus the first available client and navigate
+            await clients[0].focus();
+            clients[0].postMessage({
+              type: 'NAVIGATE_TO',
+              url: event.data.url
+            });
+          }
+        } catch (error) {
+          console.error('[SW] Navigation request failed:', error);
+        }
+      })()
+    );
+  }
 });
 
 // Fetch event - implement enhanced caching strategies
@@ -344,86 +574,6 @@ async function syncCloudData() {
   }
 }
 
-// Push notification handling
-self.addEventListener('push', (event) => {
-  console.log('[SW] Push received');
-  
-  const options = {
-    body: event.data ? event.data.text() : 'New update available',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
-    vibrate: [200, 100, 200],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Open App',
-        icon: '/icons/icon-192x192.png'
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: '/icons/icon-192x192.png'
-      }
-    ]
-  };
-  
-  event.waitUntil(
-    self.registration.showNotification('BizTras Cloud', options)
-  );
-});
-
-// Notification click handling
-self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification click received');
-  
-  event.notification.close();
-  
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  }
-});
-
-// Enhanced message handling from main thread
-self.addEventListener('message', (event) => {
-  console.log('[SW] Message received:', event.data);
-  
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  
-  if (event.data && event.data.type === 'GET_VERSION') {
-    event.ports[0].postMessage({ version: CACHE_NAME });
-  }
-  
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    event.waitUntil(
-      (async () => {
-        await cleanupStaleCache();
-        event.ports[0].postMessage({ success: true });
-      })()
-    );
-  }
-  
-  if (event.data && event.data.type === 'FORCE_REFRESH') {
-    event.waitUntil(
-      (async () => {
-        // Clear all runtime cache
-        const cache = await caches.open(RUNTIME_CACHE);
-        const requests = await cache.keys();
-        await Promise.all(requests.map(request => cache.delete(request)));
-        
-        event.ports[0].postMessage({ success: true });
-      })()
-    );
-  }
-});
-
 // Periodic background sync (if supported)
 self.addEventListener('periodicsync', (event) => {
   console.log('[SW] Periodic sync:', event.tag);
@@ -451,4 +601,44 @@ self.addEventListener('unhandledrejection', (event) => {
   console.error('[SW] Unhandled rejection:', event.reason);
 });
 
-console.log('[SW] Service Worker v2.1.0 loaded successfully with enhanced caching');
+// Push subscription change event
+self.addEventListener('pushsubscriptionchange', (event) => {
+  console.log('[SW] Push subscription changed');
+  
+  event.waitUntil(
+    (async () => {
+      try {
+        // Re-subscribe with new subscription
+        const newSubscription = await event.target.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: event.oldSubscription.options.applicationServerKey
+        });
+        
+        console.log('[SW] New subscription created:', newSubscription);
+        
+        // Send new subscription to server
+        await fetch('/api/push-notifications/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            subscription: {
+              endpoint: newSubscription.endpoint,
+              keys: {
+                p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(newSubscription.getKey('p256dh')))),
+                auth: btoa(String.fromCharCode.apply(null, new Uint8Array(newSubscription.getKey('auth'))))
+              }
+            }
+          })
+        });
+        
+        console.log('[SW] Subscription updated on server');
+      } catch (error) {
+        console.error('[SW] Failed to handle subscription change:', error);
+      }
+    })()
+  );
+});
+
+console.log('[SW] Service Worker v2.2.0 loaded with Push Notification support and enhanced caching');

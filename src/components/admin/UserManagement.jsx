@@ -10,9 +10,11 @@ import {
   FiMoreVertical,
   FiRefreshCw,
   FiUsers,
-  FiEye
+  FiEye,
+  FiBell
 } from 'react-icons/fi';
 import api from '../../services/api';
+import NotificationSender from './NotificationSender';
 
 const UserManagement = () => {
   const { isDark } = useTheme();
@@ -24,6 +26,10 @@ const UserManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  
+  // Push notification states
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [selectedUserForNotification, setSelectedUserForNotification] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -92,6 +98,17 @@ const UserManagement = () => {
     }
   };
 
+  // Push notification handlers
+  const handleSendNotification = (user) => {
+    setSelectedUserForNotification(user);
+    setShowNotificationModal(true);
+  };
+
+  const handleSendToAllUsers = () => {
+    setSelectedUserForNotification(null);
+    setShowNotificationModal(true);
+  };
+
   const getStatusBadge = (status) => {
     const colors = {
       pending: 'badge badge-warning',
@@ -150,13 +167,22 @@ const UserManagement = () => {
             Manage user accounts and cloud access permissions
           </p>
         </div>
-        <button
-          onClick={fetchUsers}
-          className="btn btn-secondary"
-        >
-          <FiRefreshCw size={16} className="mr-2" />
-          Refresh
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={handleSendToAllUsers}
+            className="btn btn-primary"
+          >
+            <FiBell className="mr-2" size={16} />
+            Send Notification
+          </button>
+          <button
+            onClick={fetchUsers}
+            className="btn btn-secondary"
+          >
+            <FiRefreshCw size={16} className="mr-2" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -291,6 +317,17 @@ const UserManagement = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-1 ml-2">
+                      {/* Send Notification Button */}
+                      {user.role !== 'admin' && (
+                        <button
+                          onClick={() => handleSendNotification(user)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                          title="Send Notification"
+                        >
+                          <FiBell size={16} />
+                        </button>
+                      )}
+                      
                       {user.status === 'pending' && (
                         <>
                           <button
@@ -391,6 +428,17 @@ const UserManagement = () => {
                   </td>
                   <td>
                     <div className="flex justify-end space-x-1">
+                      {/* Send Notification Button */}
+                      {user.role !== 'admin' && (
+                        <button
+                          onClick={() => handleSendNotification(user)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                          title="Send Notification"
+                        >
+                          <FiBell size={16} />
+                        </button>
+                      )}
+                      
                       {user.status === 'pending' && (
                         <>
                           <button
@@ -473,6 +521,16 @@ const UserManagement = () => {
           </div>
         )}
       </div>
+
+      {/* Notification Sender Modal */}
+      <NotificationSender
+        isOpen={showNotificationModal}
+        onClose={() => {
+          setShowNotificationModal(false);
+          setSelectedUserForNotification(null);
+        }}
+        targetUser={selectedUserForNotification}
+      />
     </div>
   );
 };

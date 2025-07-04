@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
+import { PushProvider } from './context/PushContext';
 
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
@@ -23,67 +24,76 @@ function App() {
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDark ? 'dark' : ''}`}>
-      <Routes>
-        <Route 
-          path="/login" 
-          element={!currentUser ? <Login /> : <Navigate to="/dashboard" />} 
-        />
-        <Route 
-          path="/register" 
-          element={!currentUser ? <Register /> : <Navigate to="/dashboard" />} 
-        />
+      {currentUser ? (
+        <PushProvider>
+          <Routes>
+            <Route 
+              path="/login" 
+              element={<Navigate to="/dashboard" />} 
+            />
+            <Route 
+              path="/register" 
+              element={<Navigate to="/dashboard" />} 
+            />
 
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/dashboard" />} />
-          
-          <Route 
-            path="/admin" 
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/admin/users" 
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <UserManagement />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/cloud-dashboard" 
-            element={
-              <ProtectedRoute requiredRole="clouduser">
-                <CloudDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                {currentUser?.role === 'admin' ? (
-                  <Navigate to="/admin" />
-                ) : currentUser?.cloudUser ? (
-                  <Navigate to="/cloud-dashboard" />
-                ) : (
-                  <ProtectedRoute />
-                )}
-              </ProtectedRoute>
-            } 
-          />
-        </Route>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Navigate to="/dashboard" />} />
+              
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="/admin/users" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <UserManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="/cloud-dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="clouduser">
+                    <CloudDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    {currentUser?.role === 'admin' ? (
+                      <Navigate to="/admin" />
+                    ) : currentUser?.cloudUser ? (
+                      <Navigate to="/cloud-dashboard" />
+                    ) : (
+                      <ProtectedRoute />
+                    )}
+                  </ProtectedRoute>
+                } 
+              />
+            </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" />} />
-      </Routes>
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
 
-      {/* PWA Install Prompt - only show when user is logged in */}
-      {currentUser && <PWAInstallPrompt />}
+          <PWAInstallPrompt />
+        </PushProvider>
+      ) : (
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+      )}
     </div>
   );
 }

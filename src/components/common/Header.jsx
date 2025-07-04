@@ -1,23 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { FiSun, FiMoon, FiUser, FiLogOut, FiChevronDown, FiBell, FiSettings, FiMenu } from 'react-icons/fi';
+import NotificationToggle from './NotificationToggle';
+import { FiSun, FiMoon, FiUser, FiLogOut, FiChevronDown, FiSettings, FiMenu } from 'react-icons/fi';
 
 const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const { currentUser, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const menuRef = useRef(null);
-  const notificationRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowUserMenu(false);
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setShowNotifications(false);
       }
     };
 
@@ -64,7 +60,6 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
           
           {/* Left Side - Logo & Mobile Menu */}
           <div className="flex items-center space-x-3">
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className={`p-2 rounded-lg lg:hidden transition-colors ${
@@ -76,7 +71,6 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               <FiMenu size={20} />
             </button>
 
-            {/* Logo */}
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <img
@@ -106,50 +100,8 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
           {/* Right Side */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Notifications */}
-            <div className="relative hidden sm:block" ref={notificationRef}>
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className={`p-2 rounded-lg transition-colors ${
-                  isDark 
-                    ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <FiBell size={20} />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-
-              {showNotifications && (
-                <div className={`absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl shadow-lg ${
-                  isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
-                } animate-scale-in`}>
-                  <div className="p-4">
-                    <h3 className={`font-semibold mb-3 ${
-                      isDark ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      Notifications
-                    </h3>
-                    <div className="space-y-3">
-                      <div className={`p-3 rounded-lg ${
-                        isDark ? 'bg-gray-700' : 'bg-gray-50'
-                      }`}>
-                        <p className={`text-sm ${
-                          isDark ? 'text-gray-300' : 'text-gray-700'
-                        }`}>
-                          Welcome to BizTras Cloud  Platform!
-                        </p>
-                        <p className={`text-xs mt-1 ${
-                          isDark ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          Just now
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Push Notification Toggle */}
+            <NotificationToggle />
 
             {/* Theme Toggle */}
             <button
