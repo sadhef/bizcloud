@@ -2,14 +2,21 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { clearStoredAuth } from './storage';
 
-// Create axios instance with proper configuration
+// Simple API URL detection
+const getBaseURL = () => {
+  if (window.location.hostname === 'bizclouds.vercel.app') {
+    return 'https://bizservers.vercel.app/api';
+  }
+  return process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+};
+
+// Create axios instance
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: getBaseURL(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false,
 });
 
 // Request interceptor
@@ -37,7 +44,7 @@ api.interceptors.request.use(
   }
 );
 
-// Enhanced response interceptor
+// Response interceptor - SIMPLIFIED
 api.interceptors.response.use(
   (response) => {
     console.log(`[API] ${response.config.method?.toUpperCase()} ${response.config.url} - Success`);
@@ -48,18 +55,14 @@ api.interceptors.response.use(
 
     // Handle network errors
     if (!error.response) {
-      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        toast.error('Request timeout. Please try again.');
-      } else {
-        toast.error('Network error. Please check your connection.');
-      }
+      toast.error('Network error. Please check your connection.');
       return Promise.reject(error);
     }
 
     const { status, data } = error.response;
-    const errorMessage = data?.message || error.message || 'An error occurred';
+    const message = data?.message || 'An error occurred';
 
-    // Handle different HTTP status codes
+    // Handle different status codes
     switch (status) {
       case 401:
         console.log('[API] 401 Unauthorized - clearing auth data');
@@ -74,38 +77,12 @@ api.interceptors.response.use(
         }
         break;
 
-      case 403:
-        toast.error('You do not have permission to perform this action');
-        break;
-
-      case 404:
-        toast.error('Resource not found');
-        break;
-
-      case 408:
-        toast.error('Request timeout. Please try again.');
-        break;
-
-      case 422:
-        toast.error(errorMessage || 'Invalid data provided');
-        break;
-
-      case 429:
-        toast.error('Too many requests. Please wait and try again.');
-        break;
-
       case 500:
-        toast.error('Internal server error. Please try again later.');
-        break;
-
-      case 502:
-      case 503:
-      case 504:
-        toast.error('Server temporarily unavailable. Please try again later.');
+        toast.error('Server error. Please try again later.');
         break;
 
       default:
-        toast.error(errorMessage);
+        toast.error(message);
     }
 
     return Promise.reject(error);
@@ -123,18 +100,5 @@ api.healthCheck = async () => {
     return false;
   }
 };
-
-// Handle online/offline events
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', () => {
-    console.log('[API] Connection restored');
-    toast.success('Connection restored', { autoClose: 2000 });
-  });
-
-  window.addEventListener('offline', () => {
-    console.log('[API] Connection lost');
-    toast.warning('You are currently offline', { autoClose: 3000 });
-  });
-}
 
 export default api;
