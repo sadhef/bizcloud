@@ -281,6 +281,22 @@ const formatDate = (date) => {
   });
 };
 
+// Utility function to create a unique ID for rows
+const generateRowId = () => {
+  return `row_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+// Utility function to ensure row has all columns
+const ensureRowHasAllColumns = (row, columns) => {
+  const newRow = { ...row };
+  columns.forEach(column => {
+    if (!(column in newRow)) {
+      newRow[column] = '';
+    }
+  });
+  return newRow;
+};
+
 // Main Cloud Dashboard Component
 const CloudDashboard = () => {
   // Cloud Data State
@@ -362,8 +378,17 @@ const CloudDashboard = () => {
           endDate: cloudDates.endDate ? new Date(cloudDates.endDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         });
         
-        setCloudColumns(cloudData.columns || ['Server', 'Status', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'SSL Expiry', 'Space Used', 'Remarks']);
-        setCloudRows(cloudData.rows || []);
+        const defaultCloudColumns = ['Server', 'Status', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'SSL Expiry', 'Space Used', 'Remarks'];
+        const receivedColumns = cloudData.columns || defaultCloudColumns;
+        setCloudColumns([...receivedColumns]);
+        
+        // Ensure all rows have all columns and add IDs if missing
+        const processedCloudRows = (cloudData.rows || []).map((row, index) => ({
+          id: row.id || generateRowId(),
+          ...ensureRowHasAllColumns(row, receivedColumns)
+        }));
+        setCloudRows([...processedCloudRows]);
+        
         setCloudTotalSpaceUsed(cloudData.totalSpaceUsed || '');
         setLastUpdated(cloudData.updatedAt);
       }
@@ -385,8 +410,15 @@ const CloudDashboard = () => {
         });
         
         const defaultBackupColumns = ['Server', 'SERVER STATUS', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Remarks'];
-        setBackupColumns(backupData.columns || defaultBackupColumns);
-        setBackupRows(backupData.rows || []);
+        const receivedColumns = backupData.columns || defaultBackupColumns;
+        setBackupColumns([...receivedColumns]);
+        
+        // Ensure all rows have all columns and add IDs if missing
+        const processedBackupRows = (backupData.rows || []).map((row, index) => ({
+          id: row.id || generateRowId(),
+          ...ensureRowHasAllColumns(row, receivedColumns)
+        }));
+        setBackupRows([...processedBackupRows]);
       }
       
       setHasUnsavedChanges(false);
@@ -418,11 +450,22 @@ const CloudDashboard = () => {
       
       console.log('Manual save initiated...');
       
+      // Clean rows data (remove internal React keys like 'id')
+      const cleanCloudRows = cloudRows.map(row => {
+        const { id, ...cleanRow } = row;
+        return cleanRow;
+      });
+      
+      const cleanBackupRows = backupRows.map(row => {
+        const { id, ...cleanRow } = row;
+        return cleanRow;
+      });
+      
       const cloudPayload = {
         reportTitle: cloudReportTitle,
         reportDates: cloudReportDates,
         columns: cloudColumns,
-        rows: cloudRows,
+        rows: cleanCloudRows,
         totalSpaceUsed: cloudTotalSpaceUsed
       };
       
@@ -430,14 +473,20 @@ const CloudDashboard = () => {
         reportTitle: backupReportTitle,
         reportDates: backupReportDates,
         columns: backupColumns,
-        rows: backupRows
+        rows: cleanBackupRows
       };
       
+      console.log('Saving cloud data:', { rowsCount: cleanCloudRows.length, columnsCount: cloudColumns.length });
+      console.log('Saving backup data:', { rowsCount: cleanBackupRows.length, columnsCount: backupColumns.length });
+      
       // Save data
-      await Promise.all([
+      const [cloudResult, backupResult] = await Promise.all([
         api.post('/cloud-report/save', cloudPayload),
         api.post('/backup-server/save', backupPayload)
       ]);
+      
+      console.log('Cloud save result:', cloudResult);
+      console.log('Backup save result:', backupResult);
       
       console.log('Data saved successfully, refreshing...');
       
@@ -450,7 +499,7 @@ const CloudDashboard = () => {
       
     } catch (err) {
       console.error('Error saving cloud dashboard data:', err);
-      toast.error('Failed to save dashboard data');
+      toast.error(`Failed to save dashboard data: ${err.message || 'Unknown error'}`);
       return false;
     } finally {
       setSaveLoading(false);
@@ -574,109 +623,268 @@ const CloudDashboard = () => {
     toast.success('Backup columns reordered successfully!');
   };
 
-  // Cloud Column Management
+  // FIXED: Cloud Column Management
   const handleAddCloudColumn = () => {
-    if (newCloudColumnName.trim() && !cloudColumns.includes(newCloudColumnName.trim())) {
-      setCloudColumns([...cloudColumns, newCloudColumnName.trim()]);
+    const trimmedName = newCloudColumnName.trim();
+    
+    if (!trimmedName) {
+      toast.error('Please enter a valid column name');
+      return;
+    }
+    
+    if (cloudColumns.includes(trimmedName)) {
+      toast.error('Column already exists!');
+      return;
+    }
+    
+    try {
+      // Add column to state
+      const newColumns = [...cloudColumns, trimmedName];
+      setCloudColumns(newColumns);
+      
+      // Update all existing rows to include the new column
+      const updatedRows = cloudRows.map(row => ({
+        ...row,
+        [trimmedName]: ''
+      }));
+      setCloudRows([...updatedRows]);
+      
       setNewCloudColumnName('');
       markAsChanged();
-      toast.success(`Cloud column "${newCloudColumnName}" added successfully!`);
-    } else if (cloudColumns.includes(newCloudColumnName.trim())) {
-      toast.error('Column already exists!');
-    } else {
-      toast.error('Please enter a valid column name');
+      toast.success(`Cloud column "${trimmedName}" added successfully!`);
+      
+      console.log('Added cloud column:', trimmedName);
+      console.log('Updated cloud columns:', newColumns);
+      console.log('Updated cloud rows count:', updatedRows.length);
+    } catch (error) {
+      console.error('Error adding cloud column:', error);
+      toast.error('Failed to add column');
     }
   };
 
   const handleRemoveCloudColumn = (indexToRemove) => {
-    const columnToRemove = cloudColumns[indexToRemove];
-    setCloudColumns(cloudColumns.filter((_, index) => index !== indexToRemove));
+    if (cloudColumns.length <= 1) {
+      toast.error('Cannot remove the last column');
+      return;
+    }
     
-    const updatedRows = cloudRows.map(row => {
-      const newRow = { ...row };
-      delete newRow[columnToRemove];
-      return newRow;
-    });
-    setCloudRows(updatedRows);
-    markAsChanged();
-    
-    toast.success(`Cloud column "${columnToRemove}" removed successfully!`);
+    try {
+      const columnToRemove = cloudColumns[indexToRemove];
+      const newColumns = cloudColumns.filter((_, index) => index !== indexToRemove);
+      setCloudColumns([...newColumns]);
+      
+      // Remove the column from all existing rows
+      const updatedRows = cloudRows.map(row => {
+        const { [columnToRemove]: removed, ...newRow } = row;
+        return newRow;
+      });
+      setCloudRows([...updatedRows]);
+      
+      markAsChanged();
+      toast.success(`Cloud column "${columnToRemove}" removed successfully!`);
+      
+      console.log('Removed cloud column:', columnToRemove);
+      console.log('Updated cloud columns:', newColumns);
+    } catch (error) {
+      console.error('Error removing cloud column:', error);
+      toast.error('Failed to remove column');
+    }
   };
 
-  // Backup Column Management
+  // FIXED: Backup Column Management
   const handleAddBackupColumn = () => {
-    if (newBackupColumnName.trim() && !backupColumns.includes(newBackupColumnName.trim())) {
-      setBackupColumns([...backupColumns, newBackupColumnName.trim()]);
+    const trimmedName = newBackupColumnName.trim();
+    
+    if (!trimmedName) {
+      toast.error('Please enter a valid column name');
+      return;
+    }
+    
+    if (backupColumns.includes(trimmedName)) {
+      toast.error('Column already exists!');
+      return;
+    }
+    
+    try {
+      // Add column to state
+      const newColumns = [...backupColumns, trimmedName];
+      setBackupColumns(newColumns);
+      
+      // Update all existing rows to include the new column
+      const updatedRows = backupRows.map(row => ({
+        ...row,
+        [trimmedName]: ''
+      }));
+      setBackupRows([...updatedRows]);
+      
       setNewBackupColumnName('');
       markAsChanged();
-      toast.success(`Backup column "${newBackupColumnName}" added successfully!`);
-    } else if (backupColumns.includes(newBackupColumnName.trim())) {
-      toast.error('Column already exists!');
-    } else {
-      toast.error('Please enter a valid column name');
+      toast.success(`Backup column "${trimmedName}" added successfully!`);
+      
+      console.log('Added backup column:', trimmedName);
+      console.log('Updated backup columns:', newColumns);
+      console.log('Updated backup rows count:', updatedRows.length);
+    } catch (error) {
+      console.error('Error adding backup column:', error);
+      toast.error('Failed to add column');
     }
   };
 
   const handleRemoveBackupColumn = (indexToRemove) => {
-    const columnToRemove = backupColumns[indexToRemove];
-    setBackupColumns(backupColumns.filter((_, index) => index !== indexToRemove));
+    if (backupColumns.length <= 1) {
+      toast.error('Cannot remove the last column');
+      return;
+    }
     
-    const updatedRows = backupRows.map(row => {
-      const newRow = { ...row };
-      delete newRow[columnToRemove];
-      return newRow;
-    });
-    setBackupRows(updatedRows);
-    markAsChanged();
-    
-    toast.success(`Backup column "${columnToRemove}" removed successfully!`);
+    try {
+      const columnToRemove = backupColumns[indexToRemove];
+      const newColumns = backupColumns.filter((_, index) => index !== indexToRemove);
+      setBackupColumns([...newColumns]);
+      
+      // Remove the column from all existing rows
+      const updatedRows = backupRows.map(row => {
+        const { [columnToRemove]: removed, ...newRow } = row;
+        return newRow;
+      });
+      setBackupRows([...updatedRows]);
+      
+      markAsChanged();
+      toast.success(`Backup column "${columnToRemove}" removed successfully!`);
+      
+      console.log('Removed backup column:', columnToRemove);
+      console.log('Updated backup columns:', newColumns);
+    } catch (error) {
+      console.error('Error removing backup column:', error);
+      toast.error('Failed to remove column');
+    }
   };
 
-  // Row Management
+  // FIXED: Row Management - Cloud
   const handleAddCloudRow = () => {
-    const newRow = {};
-    cloudColumns.forEach(column => {
-      newRow[column] = '';
-    });
-    setCloudRows([...cloudRows, newRow]);
-    markAsChanged();
-    toast.success('New cloud service row added successfully!');
+    try {
+      const newRow = {
+        id: generateRowId()
+      };
+      
+      // Initialize all columns with empty values
+      cloudColumns.forEach(column => {
+        newRow[column] = '';
+      });
+      
+      const updatedRows = [...cloudRows, newRow];
+      setCloudRows(updatedRows);
+      markAsChanged();
+      toast.success('New cloud service row added successfully!');
+      
+      console.log('Added cloud row with ID:', newRow.id);
+      console.log('Total cloud rows:', updatedRows.length);
+    } catch (error) {
+      console.error('Error adding cloud row:', error);
+      toast.error('Failed to add row');
+    }
   };
 
   const handleRemoveCloudRow = (indexToRemove) => {
-    setCloudRows(cloudRows.filter((_, index) => index !== indexToRemove));
-    markAsChanged();
-    toast.success('Cloud service row removed successfully!');
+    try {
+      const rowToRemove = cloudRows[indexToRemove];
+      const updatedRows = cloudRows.filter((_, index) => index !== indexToRemove);
+      setCloudRows([...updatedRows]);
+      markAsChanged();
+      toast.success('Cloud service row removed successfully!');
+      
+      console.log('Removed cloud row with ID:', rowToRemove?.id);
+      console.log('Remaining cloud rows:', updatedRows.length);
+    } catch (error) {
+      console.error('Error removing cloud row:', error);
+      toast.error('Failed to remove row');
+    }
   };
 
   const handleCloudCellChange = (rowIndex, column, value) => {
-    const updatedRows = [...cloudRows];
-    updatedRows[rowIndex][column] = value;
-    setCloudRows(updatedRows);
-    markAsChanged();
+    try {
+      if (rowIndex < 0 || rowIndex >= cloudRows.length) {
+        console.error('Invalid row index:', rowIndex);
+        return;
+      }
+      
+      const updatedRows = [...cloudRows];
+      updatedRows[rowIndex] = {
+        ...updatedRows[rowIndex],
+        [column]: value
+      };
+      
+      setCloudRows(updatedRows);
+      markAsChanged();
+      
+      console.log(`Updated cloud cell [${rowIndex}][${column}] = "${value}"`);
+    } catch (error) {
+      console.error('Error updating cloud cell:', error);
+      toast.error('Failed to update cell');
+    }
   };
 
+  // FIXED: Row Management - Backup
   const handleAddBackupRow = () => {
-    const newRow = {};
-    backupColumns.forEach(column => {
-      newRow[column] = '';
-    });
-    setBackupRows([...backupRows, newRow]);
-    markAsChanged();
-    toast.success('New backup server row added successfully!');
+    try {
+      const newRow = {
+        id: generateRowId()
+      };
+      
+      // Initialize all columns with empty values
+      backupColumns.forEach(column => {
+        newRow[column] = '';
+      });
+      
+      const updatedRows = [...backupRows, newRow];
+      setBackupRows(updatedRows);
+      markAsChanged();
+      toast.success('New backup server row added successfully!');
+      
+      console.log('Added backup row with ID:', newRow.id);
+      console.log('Total backup rows:', updatedRows.length);
+    } catch (error) {
+      console.error('Error adding backup row:', error);
+      toast.error('Failed to add row');
+    }
   };
 
   const handleRemoveBackupRow = (indexToRemove) => {
-    setBackupRows(backupRows.filter((_, index) => index !== indexToRemove));
-    markAsChanged();
-    toast.success('Backup server row removed successfully!');
+    try {
+      const rowToRemove = backupRows[indexToRemove];
+      const updatedRows = backupRows.filter((_, index) => index !== indexToRemove);
+      setBackupRows([...updatedRows]);
+      markAsChanged();
+      toast.success('Backup server row removed successfully!');
+      
+      console.log('Removed backup row with ID:', rowToRemove?.id);
+      console.log('Remaining backup rows:', updatedRows.length);
+    } catch (error) {
+      console.error('Error removing backup row:', error);
+      toast.error('Failed to remove row');
+    }
   };
 
   const handleBackupCellChange = (rowIndex, column, value) => {
-    const updatedRows = [...backupRows];
-    updatedRows[rowIndex][column] = value;
-    setBackupRows(updatedRows);
-    markAsChanged();
+    try {
+      if (rowIndex < 0 || rowIndex >= backupRows.length) {
+        console.error('Invalid row index:', rowIndex);
+        return;
+      }
+      
+      const updatedRows = [...backupRows];
+      updatedRows[rowIndex] = {
+        ...updatedRows[rowIndex],
+        [column]: value
+      };
+      
+      setBackupRows(updatedRows);
+      markAsChanged();
+      
+      console.log(`Updated backup cell [${rowIndex}][${column}] = "${value}"`);
+    } catch (error) {
+      console.error('Error updating backup cell:', error);
+      toast.error('Failed to update cell');
+    }
   };
 
   // Toggle preview mode
@@ -704,14 +912,20 @@ const CloudDashboard = () => {
         reportTitle: cloudReportTitle,
         reportDates: cloudReportDates,
         columns: cloudColumns,
-        rows: cloudRows,
+        rows: cloudRows.map(row => {
+          const { id, ...cleanRow } = row;
+          return cleanRow;
+        }),
         totalSpaceUsed: cloudTotalSpaceUsed
       },
       backupData: {
         reportTitle: backupReportTitle,
         reportDates: backupReportDates,
         columns: backupColumns,
-        rows: backupRows
+        rows: backupRows.map(row => {
+          const { id, ...cleanRow } = row;
+          return cleanRow;
+        })
       },
       lastUpdated
     };
@@ -738,7 +952,7 @@ const CloudDashboard = () => {
           type="date"
           value={row[column] || ''}
           onChange={(e) => handleCloudCellChange(rowIndex, column, e.target.value)}
-          className="input"
+          className="input w-full"
         />
       );
     } else {
@@ -747,7 +961,8 @@ const CloudDashboard = () => {
           type="text"
           value={row[column] || ''}
           onChange={(e) => handleCloudCellChange(rowIndex, column, e.target.value)}
-          className="input"
+          className="input w-full"
+          placeholder={`Enter ${column}`}
         />
       );
     }
@@ -781,7 +996,8 @@ const CloudDashboard = () => {
           type="text"
           value={row[column] || ''}
           onChange={(e) => handleBackupCellChange(rowIndex, column, e.target.value)}
-          className="input"
+          className="input w-full"
+          placeholder={`Enter ${column}`}
         />
       );
     }
@@ -972,6 +1188,7 @@ const CloudDashboard = () => {
                 <button
                   onClick={handleAddCloudColumn}
                   className="btn btn-primary"
+                  disabled={!newCloudColumnName.trim()}
                 >
                   <FiPlus className="mr-2" />
                   Add Column
@@ -988,7 +1205,7 @@ const CloudDashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {cloudColumns.map((column, index) => (
                     <DraggableColumn
-                      key={`cloud-${index}`}
+                      key={`cloud-${index}-${column}`}
                       column={column}
                       index={index}
                       onRemove={handleRemoveCloudColumn}
@@ -1030,7 +1247,7 @@ const CloudDashboard = () => {
                       </th>
                       {cloudColumns.map((column, index) => (
                         <th
-                          key={index}
+                          key={`header-${index}-${column}`}
                           className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
                             isDark ? 'text-gray-300' : 'text-gray-500'
                           }`}
@@ -1042,7 +1259,7 @@ const CloudDashboard = () => {
                   </thead>
                   <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
                     {cloudRows.map((row, rowIndex) => (
-                      <tr key={rowIndex} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
+                      <tr key={row.id || `cloud-row-${rowIndex}`} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <button
                             onClick={() => handleRemoveCloudRow(rowIndex)}
@@ -1053,7 +1270,7 @@ const CloudDashboard = () => {
                           </button>
                         </td>
                         {cloudColumns.map((column, colIndex) => (
-                          <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <td key={`cell-${rowIndex}-${colIndex}-${column}`} className="px-3 sm:px-6 py-4 whitespace-nowrap">
                             {renderCloudCell(row, column, rowIndex)}
                           </td>
                         ))}
@@ -1122,6 +1339,7 @@ const CloudDashboard = () => {
                 <button
                   onClick={handleAddBackupColumn}
                   className="btn btn-success"
+                  disabled={!newBackupColumnName.trim()}
                 >
                   <FiPlus className="mr-2" />
                   Add Column
@@ -1138,7 +1356,7 @@ const CloudDashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {backupColumns.map((column, index) => (
                     <DraggableColumn
-                      key={`backup-${index}`}
+                      key={`backup-${index}-${column}`}
                       column={column}
                       index={index}
                       onRemove={handleRemoveBackupColumn}
@@ -1180,7 +1398,7 @@ const CloudDashboard = () => {
                       </th>
                       {backupColumns.map((column, index) => (
                         <th
-                          key={index}
+                          key={`backup-header-${index}-${column}`}
                           className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}
                         >
                           {column}
@@ -1190,7 +1408,7 @@ const CloudDashboard = () => {
                   </thead>
                   <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
                     {backupRows.map((row, rowIndex) => (
-                      <tr key={rowIndex} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
+                      <tr key={row.id || `backup-row-${rowIndex}`} className={`${isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <button
                             onClick={() => handleRemoveBackupRow(rowIndex)}
@@ -1201,7 +1419,7 @@ const CloudDashboard = () => {
                           </button>
                         </td>
                         {backupColumns.map((column, colIndex) => (
-                          <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <td key={`backup-cell-${rowIndex}-${colIndex}-${column}`} className="px-3 sm:px-6 py-4 whitespace-nowrap">
                             {renderBackupCell(row, column, rowIndex)}
                           </td>
                         ))}
