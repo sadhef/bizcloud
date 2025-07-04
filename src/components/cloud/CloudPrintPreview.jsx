@@ -1,613 +1,787 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
-import { FiArrowLeft, FiPrinter } from 'react-icons/fi';
+import { FiArrowLeft, FiPrinter, FiCamera } from 'react-icons/fi';
 
-// Helper function to get status color with ENHANCED PRINT VISIBILITY
+// Helper function to get status color matching the exact image
 const getStatusColor = (value, isServerStatus = false, isCloudStatus = false) => {
-  if (!value) return { bg: '#ffffff', color: '#000000', border: '#000000', printBg: '#ffffff', printColor: '#000000' };
+  if (!value) return { bg: '#ffffff', color: '#000000' };
   
   const normalizedVal = value.toUpperCase();
   
   if (isServerStatus) {
     switch (normalizedVal) {
       case 'ONLINE':
-        return { 
-          bg: '#10b981', 
-          color: '#ffffff', 
-          border: '#059669',
-          printBg: '#059669',
-          printColor: '#ffffff'
-        };
+        return { bg: '#22c55e', color: '#ffffff' }; // Green
       case 'OFFLINE':
-        return { 
-          bg: '#ef4444', 
-          color: '#ffffff', 
-          border: '#dc2626',
-          printBg: '#b91c1c',
-          printColor: '#ffffff'
-        };
+        return { bg: '#ef4444', color: '#ffffff' }; // Red
       default:
-        return { 
-          bg: '#ffffff', 
-          color: '#000000', 
-          border: '#000000',
-          printBg: '#ffffff',
-          printColor: '#000000'
-        };
+        return { bg: '#ffffff', color: '#000000' };
     }
   } else if (isCloudStatus) {
     switch (normalizedVal) {
       case 'AUTOMATIC':
       case 'ONLINE':
-        return { 
-          bg: '#10b981', 
-          color: '#ffffff', 
-          border: '#059669',
-          printBg: '#059669',
-          printColor: '#ffffff'
-        };
+        return { bg: '#22c55e', color: '#ffffff' }; // Green like in image
       case 'MANUAL':
       case 'MAINTENANCE':
-        return { 
-          bg: '#f59e0b', 
-          color: '#000000', 
-          border: '#d97706',
-          printBg: '#b45309',
-          printColor: '#ffffff'
-        };
+        return { bg: '#f59e0b', color: '#000000' }; // Yellow/Orange
       case 'FAILED':
       case 'OFFLINE':
-        return { 
-          bg: '#ef4444', 
-          color: '#ffffff', 
-          border: '#dc2626',
-          printBg: '#b91c1c',
-          printColor: '#ffffff'
-        };
+        return { bg: '#ef4444', color: '#ffffff' }; // Red
       case 'IN PROGRESS':
-        return { 
-          bg: '#3b82f6', 
-          color: '#ffffff', 
-          border: '#2563eb',
-          printBg: '#1d4ed8',
-          printColor: '#ffffff'
-        };
+        return { bg: '#3b82f6', color: '#ffffff' }; // Blue
       case 'N/A':
-        return { 
-          bg: '#6b7280', 
-          color: '#ffffff', 
-          border: '#4b5563',
-          printBg: '#374151',
-          printColor: '#ffffff'
-        };
+        return { bg: '#6b7280', color: '#ffffff' }; // Gray
       default:
-        return { 
-          bg: '#ffffff', 
-          color: '#000000', 
-          border: '#000000',
-          printBg: '#ffffff',
-          printColor: '#000000'
-        };
+        return { bg: '#ffffff', color: '#000000' };
     }
   } else {
     // Backup weekday status
     switch (normalizedVal) {
       case 'RUNNING':
-        return { 
-          bg: '#10b981', 
-          color: '#ffffff', 
-          border: '#059669',
-          printBg: '#059669',
-          printColor: '#ffffff'
-        };
+        return { bg: '#22c55e', color: '#ffffff' }; // Green
       case 'NOT RUNNING':
-        return { 
-          bg: '#ef4444', 
-          color: '#ffffff', 
-          border: '#dc2626',
-          printBg: '#b91c1c',
-          printColor: '#ffffff'
-        };
+        return { bg: '#ef4444', color: '#ffffff' }; // Red
       case 'N/A':
-        return { 
-          bg: '#6b7280', 
-          color: '#ffffff', 
-          border: '#4b5563',
-          printBg: '#374151',
-          printColor: '#ffffff'
-        };
+        return { bg: '#6b7280', color: '#ffffff' }; // Gray
       default:
-        return { 
-          bg: '#ffffff', 
-          color: '#000000', 
-          border: '#000000',
-          printBg: '#ffffff',
-          printColor: '#000000'
-        };
+        return { bg: '#ffffff', color: '#000000' };
     }
   }
 };
 
-// Helper function to format date
+// Helper function to format date like DD-MM-YYYY
 const formatDate = (date) => {
   if (!date) return '';
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+  return new Date(date).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
   });
-};
-
-// Enhanced cell rendering for preview with colors
-const renderCellWithColor = (value, column, isBackup = false) => {
-  const isStatusColumn = column === 'Status';
-  const isWeekdayColumn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
-  const isServerStatusColumn = column === 'SERVER STATUS';
-  
-  if (isServerStatusColumn) {
-    const colors = getStatusColor(value, true, false);
-    return (
-      <span
-        style={{
-          backgroundColor: colors.bg,
-          color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '6px 10px',
-          borderRadius: '6px',
-          fontWeight: 'bold',
-          fontSize: '11px',
-          display: 'inline-block',
-          minWidth: '70px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-        }}
-      >
-        {value || 'N/A'}
-      </span>
-    );
-  } else if (isStatusColumn) {
-    const colors = getStatusColor(value, false, true);
-    return (
-      <span
-        style={{
-          backgroundColor: colors.bg,
-          color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '6px 10px',
-          borderRadius: '6px',
-          fontWeight: 'bold',
-          fontSize: '11px',
-          display: 'inline-block',
-          minWidth: '75px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-        }}
-      >
-        {value || 'N/A'}
-      </span>
-    );
-  } else if (isWeekdayColumn && isBackup) {
-    const colors = getStatusColor(value, false, false);
-    return (
-      <span
-        style={{
-          backgroundColor: colors.bg,
-          color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '6px 10px',
-          borderRadius: '6px',
-          fontWeight: 'bold',
-          fontSize: '11px',
-          display: 'inline-block',
-          minWidth: '70px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-        }}
-      >
-        {value || 'N/A'}
-      </span>
-    );
-  } else if (isWeekdayColumn && !isBackup) {
-    const colors = getStatusColor(value, false, true);
-    return (
-      <span
-        style={{
-          backgroundColor: colors.bg,
-          color: colors.color,
-          border: `2px solid ${colors.border}`,
-          padding: '6px 10px',
-          borderRadius: '6px',
-          fontWeight: 'bold',
-          fontSize: '11px',
-          display: 'inline-block',
-          minWidth: '70px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-        }}
-      >
-        {value || 'N/A'}
-      </span>
-    );
-  }
-  
-  return value || 'N/A';
 };
 
 const CloudPrintPreview = ({ cloudData, backupData }) => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const reportRef = useRef(null);
+
+  // Add custom CSS for image capture
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .capture-table-container {
+        overflow: visible !important;
+        width: auto !important;
+        max-width: none !important;
+      }
+      
+      .capture-table {
+        width: auto !important;
+        min-width: 100% !important;
+        table-layout: auto !important;
+        white-space: nowrap !important;
+      }
+      
+      .capture-table th,
+      .capture-table td {
+        white-space: nowrap !important;
+        min-width: max-content !important;
+      }
+      
+      /* Ensure proper rendering during capture */
+      [data-capture-target="true"] {
+        overflow: visible !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: none !important;
+        max-height: none !important;
+      }
+      
+      /* Dropdown menu styles */
+      .capture-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+      
+      .capture-dropdown:hover .dropdown-content {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+      
+      .dropdown-content {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.2s ease-in-out;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // Function to capture the report as multiple paginated images
+  const capturePaginatedImages = async () => {
+    try {
+      console.log('Starting paginated image capture...');
+      
+      if (!reportRef.current) {
+        window.alert('Unable to find report element. Please try again.');
+        return;
+      }
+
+      const html2canvas = (await import('html2canvas')).default;
+      
+      const element = reportRef.current;
+      const pageHeight = 1200; // Approximate page height in pixels
+      const totalHeight = element.scrollHeight;
+      const totalPages = Math.ceil(totalHeight / pageHeight);
+      
+      if (totalPages === 1) {
+        window.alert('Report is small enough for single image. Using regular capture...');
+        return captureImage();
+      }
+
+      const userConfirm = window.confirm(
+        `This will create ${totalPages} separate image files.\n\n` +
+        `Each image will be approximately one page worth of content.\n\n` +
+        `Files will be downloaded individually.\n\n` +
+        `Continue with paginated capture?`
+      );
+      
+      if (!userConfirm) return;
+
+      // Hide buttons
+      const buttons = element.querySelectorAll('.capture-hide');
+      buttons.forEach(btn => btn.style.display = 'none');
+
+      const timestamp = new Date().toISOString().split('T')[0];
+      
+      window.alert(`Starting capture of ${totalPages} pages... Files will download one by one.`);
+
+      for (let page = 0; page < totalPages; page++) {
+        const yOffset = page * pageHeight;
+        const remainingHeight = Math.min(pageHeight, totalHeight - yOffset);
+        
+        console.log(`Capturing page ${page + 1}/${totalPages}`);
+        
+        const canvas = await html2canvas(element, {
+          scale: 1.5,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: isDark ? '#1f2937' : '#ffffff',
+          width: element.scrollWidth,
+          height: remainingHeight,
+          x: 0,
+          y: yOffset,
+          scrollX: 0,
+          scrollY: 0,
+          logging: false,
+          ignoreElements: (el) => el.classList && el.classList.contains('capture-hide')
+        });
+
+        // Download individual page
+        const link = document.createElement('a');
+        link.download = `BizTras_Report_${timestamp}_Page${page + 1}_of_${totalPages}.png`;
+        link.href = canvas.toDataURL('image/png', 0.9);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Small delay between downloads to avoid browser issues
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Restore buttons
+      buttons.forEach(btn => btn.style.display = '');
+      
+      window.alert(`Successfully captured and downloaded ${totalPages} page images!`);
+      
+    } catch (error) {
+      console.error('Error in paginated capture:', error);
+      window.alert(`Error creating paginated images: ${error.message}`);
+    }
+  };
+  const captureImage = async () => {
+    try {
+      console.log('Starting image capture...');
+      
+      // Check if ref is available
+      if (!reportRef.current) {
+        console.error('Report ref is null');
+        window.alert('Unable to find report element. Please try again.');
+        return;
+      }
+
+      console.log('Report element found:', reportRef.current);
+
+      // Dynamically import html2canvas
+      const html2canvas = (await import('html2canvas')).default;
+      
+      const element = reportRef.current;
+      
+      // Check if content is too large
+      const estimatedHeight = element.scrollHeight;
+      const maxReasonableHeight = 5000; // 5000px is about 2-3 pages worth
+      
+      if (estimatedHeight > maxReasonableHeight) {
+        const userChoice = window.confirm(
+          `This report is quite large (${Math.round(estimatedHeight/1000)}k pixels tall). \n\n` +
+          `This will create a very long image file. \n\n` +
+          `For better results with large datasets, consider using "Print Report" instead. \n\n` +
+          `Do you want to continue with image capture anyway?`
+        );
+        
+        if (!userChoice) {
+          return;
+        }
+      }
+      
+      // Store original styles
+      const originalStyle = {
+        overflow: element.style.overflow,
+        width: element.style.width,
+        height: element.style.height,
+        maxWidth: element.style.maxWidth,
+        maxHeight: element.style.maxHeight
+      };
+
+      // Temporarily modify styles for full capture
+      element.style.overflow = 'visible';
+      element.style.width = 'auto';
+      element.style.height = 'auto';
+      element.style.maxWidth = 'none';
+      element.style.maxHeight = 'none';
+
+      // Hide buttons before capture
+      const buttons = element.querySelectorAll('.capture-hide');
+      const originalDisplay = [];
+      buttons.forEach((btn, index) => {
+        originalDisplay[index] = btn.style.display;
+        btn.style.display = 'none';
+      });
+
+      // Force browser to recalculate layout
+      element.getBoundingClientRect();
+      
+      // Wait a moment for layout to stabilize
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      console.log('Starting canvas generation...');
+      console.log('Element dimensions:', {
+        scrollWidth: element.scrollWidth,
+        scrollHeight: element.scrollHeight,
+        clientWidth: element.clientWidth,
+        clientHeight: element.clientHeight,
+        offsetWidth: element.offsetWidth,
+        offsetHeight: element.offsetHeight
+      });
+
+      // Show progress for large captures
+      let progressAlert;
+      if (estimatedHeight > 3000) {
+        progressAlert = setTimeout(() => {
+          window.alert('Large image capture in progress... Please wait, this may take a moment.');
+        }, 1000);
+      }
+      
+      const canvas = await html2canvas(element, {
+        scale: estimatedHeight > maxReasonableHeight ? 1 : 1.5, // Lower scale for very large images
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: isDark ? '#1f2937' : '#ffffff',
+        width: Math.max(element.scrollWidth, element.offsetWidth, 1200),
+        height: Math.max(element.scrollHeight, element.offsetHeight),
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: Math.max(element.scrollWidth, 1200),
+        windowHeight: element.scrollHeight,
+        logging: false,
+        ignoreElements: (el) => {
+          return el.classList && el.classList.contains('capture-hide');
+        },
+        onclone: (clonedDoc, clonedElement) => {
+          clonedElement.style.width = 'auto';
+          clonedElement.style.height = 'auto';
+          clonedElement.style.overflow = 'visible';
+          clonedElement.style.maxWidth = 'none';
+          clonedElement.style.maxHeight = 'none';
+          
+          const hideElements = clonedElement.querySelectorAll('.capture-hide');
+          hideElements.forEach(el => {
+            el.style.display = 'none';
+          });
+
+          const tables = clonedElement.querySelectorAll('table');
+          tables.forEach(table => {
+            table.style.width = 'auto';
+            table.style.minWidth = '100%';
+            table.style.tableLayout = 'auto';
+          });
+
+          const tableContainers = clonedElement.querySelectorAll('.overflow-x-auto');
+          tableContainers.forEach(container => {
+            container.style.overflow = 'visible';
+            container.style.width = 'auto';
+          });
+        }
+      });
+
+      // Clear progress alert
+      if (progressAlert) {
+        clearTimeout(progressAlert);
+      }
+
+      // Restore original styles
+      Object.keys(originalStyle).forEach(key => {
+        element.style[key] = originalStyle[key];
+      });
+
+      // Restore button visibility
+      buttons.forEach((btn, index) => {
+        btn.style.display = originalDisplay[index];
+      });
+
+      console.log('Canvas generated successfully');
+      console.log('Canvas dimensions:', {
+        width: canvas.width,
+        height: canvas.height,
+        sizeEstimate: `${Math.round(canvas.width * canvas.height / 1000000)}MP`
+      });
+
+      // Create and trigger download
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().split('T')[0];
+      const totalRows = cloudData.rows.length + backupData.rows.length;
+      link.download = `BizTras_Infrastructure_Report_${timestamp}_${totalRows}rows.png`;
+      link.href = canvas.toDataURL('image/png', 0.9);
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('Image capture completed successfully');
+      
+      // Show completion message with file info
+      const fileSizeMB = Math.round(canvas.toDataURL('image/png', 0.9).length * 0.75 / 1024 / 1024);
+      window.alert(
+        `Report image downloaded successfully!\n\n` +
+        `📊 Captured: ${totalRows} total rows\n` +
+        `📐 Dimensions: ${canvas.width} x ${canvas.height}px\n` +
+        `💾 Estimated size: ~${fileSizeMB}MB\n\n` +
+        `Tip: For very large reports, consider using "Print Report" for better page management.`
+      );
+      
+    } catch (error) {
+      console.error('Error capturing image:', error);
+      window.alert(`Error capturing image: ${error.message}. \n\nFor large datasets, try using "Print Report" instead.`);
+    }
+  };
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     
-    const logoCanvas = document.createElement('canvas');
-    const logoImg = new Image();
-    logoImg.crossOrigin = 'anonymous';
-    
-    logoImg.onload = function() {
-      logoCanvas.width = this.width;
-      logoCanvas.height = this.height;
-      const ctx = logoCanvas.getContext('2d');
-      ctx.drawImage(this, 0, 0);
-      const logoBase64 = logoCanvas.toDataURL();
-      
-      generatePrintContent(logoBase64);
+    // Function to convert logo to base64 for printing
+    const getLogoBase64 = () => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = this.width;
+          canvas.height = this.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(this, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = function() {
+          resolve(null); // Fallback if logo fails to load
+        };
+        img.src = '/biztras.png';
+      });
     };
-    
-    logoImg.onerror = function() {
-      generatePrintContent(null);
-    };
-    
-    logoImg.src = './biztras.png';
-    
-    setTimeout(() => {
-      if (!logoImg.complete) {
-        generatePrintContent(null);
-      }
-    }, 2000);
 
-    function generatePrintContent(logoBase64) {
-      // Calculate optimal column count and font size based on data
-      const maxColumns = Math.max(cloudData.columns.length, backupData.columns.length);
-      const isWideTable = maxColumns > 8;
-      
-      // Generate colored cells for print with SCREEN-OPTIMIZED SIZING
-      const generateColoredCellsForPrint = (data, isBackup = false) => {
-        return data.rows.map(row => `
+    // Generate table rows for cloud data exactly like the image
+    const generateCloudRows = () => {
+      return cloudData.rows.map((row, index) => {
+        const serialNo = index + 1;
+        const serverName = row['Server'] || '';
+        
+        // Use the exact weekday order from the image: Saturday, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday
+        const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const weekdayCells = weekdays.map(day => {
+          const value = row[day] || 'AUTOMATIC'; // Default to AUTOMATIC like in the image
+          const colors = getStatusColor(value, false, true);
+          return `<td style="
+            background-color: ${colors.bg}; 
+            color: ${colors.color}; 
+            text-align: center; 
+            padding: 2px 1px; 
+            font-weight: bold; 
+            font-size: 5px;
+            border: 1px solid #000;
+          ">${value}</td>`;
+        }).join('');
+        
+        const sslExpiry = row['SSL Expiry'] ? formatDate(row['SSL Expiry']) : '';
+        const serverStatus = row['Status'] || 'ONLINE';
+        const statusColor = getStatusColor(serverStatus, false, true);
+        const remarks = row['Remarks'] || '';
+        
+        return `
           <tr>
-            ${data.columns.map(column => {
-              const value = row[column] || '';
-              const isStatusColumn = column === 'Status';
-              const isWeekdayColumn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(column);
-              const isServerStatusColumn = column === 'SERVER STATUS';
-              
-              if (isServerStatusColumn) {
-                const colors = getStatusColor(value, true, false);
-                return `<td style="text-align: center; padding: ${isWideTable ? '4px 2px' : '6px 4px'};">
-                  <span style="
-                    background-color: ${colors.printBg}; 
-                    color: ${colors.printColor}; 
-                    border: 2px solid ${colors.border}; 
-                    padding: ${isWideTable ? '4px 6px' : '6px 8px'}; 
-                    border-radius: 6px; 
-                    font-weight: bold; 
-                    font-size: ${isWideTable ? '9px' : '10px'}; 
-                    display: inline-block; 
-                    min-width: ${isWideTable ? '50px' : '60px'}; 
-                    text-align: center;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-                    letter-spacing: 0.3px;
-                  ">
-                    ${value || 'N/A'}
-                  </span>
-                </td>`;
-              } else if (isStatusColumn) {
-                const colors = getStatusColor(value, false, true);
-                return `<td style="text-align: center; padding: ${isWideTable ? '4px 2px' : '6px 4px'};">
-                  <span style="
-                    background-color: ${colors.printBg}; 
-                    color: ${colors.printColor}; 
-                    border: 2px solid ${colors.border}; 
-                    padding: ${isWideTable ? '4px 6px' : '6px 8px'}; 
-                    border-radius: 6px; 
-                    font-weight: bold; 
-                    font-size: ${isWideTable ? '9px' : '10px'}; 
-                    display: inline-block; 
-                    min-width: ${isWideTable ? '55px' : '65px'}; 
-                    text-align: center;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-                    letter-spacing: 0.3px;
-                  ">
-                    ${value || 'N/A'}
-                  </span>
-                </td>`;
-              } else if (isWeekdayColumn) {
-                const colors = isBackup 
-                  ? getStatusColor(value, false, false)
-                  : getStatusColor(value, false, true);
-                return `<td style="text-align: center; padding: ${isWideTable ? '4px 2px' : '6px 4px'};">
-                  <span style="
-                    background-color: ${colors.printBg}; 
-                    color: ${colors.printColor}; 
-                    border: 2px solid ${colors.border}; 
-                    padding: ${isWideTable ? '4px 6px' : '6px 8px'}; 
-                    border-radius: 6px; 
-                    font-weight: bold; 
-                    font-size: ${isWideTable ? '9px' : '10px'}; 
-                    display: inline-block; 
-                    min-width: ${isWideTable ? '50px' : '60px'}; 
-                    text-align: center;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-                    letter-spacing: 0.3px;
-                  ">
-                    ${value || 'N/A'}
-                  </span>
-                </td>`;
-              } else {
-                return `<td style="padding: ${isWideTable ? '4px 3px' : '6px 5px'}; text-align: left; vertical-align: middle; font-weight: 500; color: #000; font-size: ${isWideTable ? '9px' : '10px'};">${value || ''}</td>`;
-              }
-            }).join('')}
+            <td style="text-align: center; padding: 2px 1px; border: 1px solid #000; font-size: 5px;">${serialNo}</td>
+            <td style="text-align: left; padding: 2px 1px; border: 1px solid #000; font-size: 5px; font-weight: 500; text-transform: uppercase;">${serverName}</td>
+            ${weekdayCells}
+            <td style="text-align: center; padding: 2px 1px; border: 1px solid #000; font-size: 5px;">${sslExpiry}</td>
+            <td style="
+              background-color: ${statusColor.bg}; 
+              color: ${statusColor.color}; 
+              text-align: center; 
+              padding: 2px 1px; 
+              font-weight: bold; 
+              font-size: 5px;
+              border: 1px solid #000;
+            ">${serverStatus}</td>
+            <td style="text-align: left; padding: 2px 1px; border: 1px solid #000; font-size: 5px;">${remarks}</td>
           </tr>
-        `).join('');
-      };
+        `;
+      }).join('');
+    };
 
+    // Generate table rows for backup data
+    const generateBackupRows = () => {
+      return backupData.rows.map((row, index) => {
+        const serialNo = index + 1;
+        const serverName = row['Server'] || '';
+        const serverStatus = row['SERVER STATUS'] || 'ONLINE';
+        const statusColor = getStatusColor(serverStatus, true, false);
+        
+        // Backup weekday order: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+        const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const weekdayCells = weekdays.map(day => {
+          const value = row[day] || 'RUNNING';
+          const colors = getStatusColor(value, false, false);
+          return `<td style="
+            background-color: ${colors.bg}; 
+            color: ${colors.color}; 
+            text-align: center; 
+            padding: 6px 4px; 
+            font-weight: bold; 
+            font-size: 10px;
+            border: 1px solid #000;
+          ">${value}</td>`;
+        }).join('');
+        
+        const remarks = row['Remarks'] || '';
+        
+        return `
+          <tr>
+            <td style="text-align: center; padding: 2px 1px; border: 1px solid #000; font-size: 5px;">${serialNo}</td>
+            <td style="text-align: left; padding: 2px 1px; border: 1px solid #000; font-size: 5px; font-weight: 500; text-transform: uppercase;">${serverName}</td>
+            <td style="
+              background-color: ${statusColor.bg}; 
+              color: ${statusColor.color}; 
+              text-align: center; 
+              padding: 2px 1px; 
+              font-weight: bold; 
+              font-size: 5px;
+              border: 1px solid #000;
+            ">${serverStatus}</td>
+            ${weekdayCells}
+            <td style="text-align: left; padding: 2px 1px; border: 1px solid #000; font-size: 5px;">${remarks}</td>
+          </tr>
+        `;
+      }).join('');
+    };
+
+    // Generate print content with logo
+    const generatePrintContent = async () => {
+      const logoBase64 = await getLogoBase64();
+      
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Cloud Infrastructure Status Report</title>
+          <title>Infrastructure Reports - BizTras Cloud</title>
           <style>
             * {
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
               box-sizing: border-box;
+              margin: 0;
+              padding: 0;
             }
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
-              padding: ${isWideTable ? '8px' : '12px'}; 
+              padding: 20px; 
               color: #000; 
               background: #fff; 
-              line-height: 1.3;
-              font-size: ${isWideTable ? '10px' : '11px'};
-              -webkit-print-color-adjust: exact !important;
-              color-adjust: exact !important;
-              print-color-adjust: exact !important;
+              line-height: 1.2;
+              font-size: 12px;
             }
-            .report-header { 
-              text-align: center; 
-              margin-bottom: ${isWideTable ? '15px' : '20px'}; 
-              border-bottom: 3px solid #000; 
-              padding-bottom: ${isWideTable ? '10px' : '15px'}; 
+            .header {
+              text-align: center;
+              margin-bottom: 25px;
+              padding-bottom: 20px;
+              border-bottom: 2px solid #4a90e2;
             }
-            .logo { 
-              width: ${isWideTable ? '60px' : '80px'}; 
-              height: auto; 
-              margin-bottom: ${isWideTable ? '8px' : '12px'}; 
-              display: block; 
-              margin-left: auto; 
-              margin-right: auto; 
-              border-radius: 8px;
-              box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            .logo {
+              width: 80px;
+              height: 80px;
+              margin: 0 auto 15px auto;
+              display: block;
+              border-radius: 12px;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             }
-            .report-title { 
-              font-size: ${isWideTable ? '18px' : '24px'}; 
-              font-weight: bold; 
-              margin-bottom: ${isWideTable ? '6px' : '10px'}; 
-              color: #000; 
-              text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            .company-name {
+              font-size: 24px;
+              font-weight: bold;
+              color: #4a90e2;
+              margin-bottom: 10px;
             }
-            .report-subtitle { 
-              font-size: ${isWideTable ? '12px' : '16px'}; 
-              margin-bottom: ${isWideTable ? '4px' : '6px'}; 
-              color: #222; 
-              font-weight: 600;
+            .nav-bar {
+              text-align: center;
+              margin-bottom: 20px;
+              font-size: 14px;
             }
-            .report-date { 
-              font-size: ${isWideTable ? '9px' : '11px'}; 
-              margin-bottom: ${isWideTable ? '3px' : '5px'}; 
-              color: #444; 
-              font-style: italic;
-              font-weight: 500;
+            .nav-bar a {
+              color: #007bff;
+              text-decoration: none;
+              margin: 0 20px;
+              cursor: pointer;
             }
-            .total-space { 
-              font-size: ${isWideTable ? '10px' : '12px'}; 
-              margin-top: ${isWideTable ? '6px' : '10px'}; 
-              font-weight: bold; 
-              color: #1e40af; 
-              background: #dbeafe;
-              padding: ${isWideTable ? '6px 10px' : '8px 12px'};
+            .nav-bar a:hover {
+              text-decoration: underline;
+            }
+            .report-section {
+              margin-bottom: 40px;
+              page-break-inside: avoid;
+            }
+            .report-title {
+              font-size: 28px;
+              font-weight: bold;
+              margin: 20px 0;
+              text-align: center;
+              color: #000;
+              letter-spacing: 1px;
+              text-transform: uppercase;
+            }
+            .report-summary {
+              text-align: center;
+              margin-bottom: 20px;
+              background: #f8f9fa;
+              padding: 12px;
               border-radius: 6px;
-              display: inline-block;
-              border: 2px solid #2563eb;
+              max-width: 400px;
+              margin-left: auto;
+              margin-right: auto;
+              border: 1px solid #dee2e6;
             }
-            .section-header { 
-              font-size: ${isWideTable ? '14px' : '18px'}; 
-              font-weight: bold; 
-              margin: ${isWideTable ? '15px 0 10px 0' : '20px 0 15px 0'}; 
-              padding: ${isWideTable ? '8px 12px' : '12px 16px'}; 
-              background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%); 
-              border-left: 6px solid #1e40af; 
-              border-radius: 6px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            .report-summary h3 {
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 10px;
               color: #000;
             }
-            .report-table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-bottom: ${isWideTable ? '15px' : '20px'}; 
-              font-size: ${isWideTable ? '8px' : '10px'}; 
-              box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-              border-radius: 6px;
-              overflow: hidden;
-              -webkit-print-color-adjust: exact !important;
-              color-adjust: exact !important;
-              print-color-adjust: exact !important;
+            .summary-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 6px;
+              text-align: left;
             }
-            .report-table th, .report-table td { 
-              border: 1px solid #9ca3af; 
-              padding: ${isWideTable ? '4px 2px' : '6px 4px'}; 
-              text-align: left; 
-              vertical-align: middle; 
+            .summary-item {
+              font-size: 10px;
+              color: #333;
             }
-            .report-table th { 
-              background: #1f2937 !important; 
-              color: white !important;
-              font-weight: bold; 
-              text-transform: uppercase; 
-              font-size: ${isWideTable ? '7px' : '9px'}; 
-              letter-spacing: 0.5px;
+            .summary-item strong {
+              color: #000;
+              font-weight: bold;
+            }
+            .space-used {
+              grid-column: 1 / -1;
               text-align: center;
-              padding: ${isWideTable ? '6px 2px' : '8px 4px'};
+              font-size: 11px;
+              font-weight: bold;
+              color: #4a90e2;
+              margin-top: 6px;
+              padding: 6px;
+              background: #e3f2fd;
+              border-radius: 4px;
+            }
+            .data-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 15px 0;
+              font-size: 8px;
+            }
+            .data-table th {
+              background-color: #4a90e2 !important;
+              color: white !important;
+              padding: 6px 3px;
+              text-align: center;
+              border: 1px solid #000;
+              font-weight: bold;
+              font-size: 8px;
+              text-transform: uppercase;
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
-            .report-table tbody tr:nth-child(even) {
-              background-color: #f8fafc !important;
+            .data-table td {
+              padding: 4px 2px;
+              border: 1px solid #000;
+              text-align: center;
+              vertical-align: middle;
+              font-size: 8px;
+            }
+            .data-table tbody tr:nth-child(even) {
+              background-color: #f8f9fa !important;
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
-            .service-count {
-              background: #bfdbfe !important;
-              color: #1e40af !important;
-              padding: ${isWideTable ? '3px 6px' : '4px 8px'};
-              border-radius: 10px;
-              font-size: ${isWideTable ? '9px' : '11px'};
-              font-weight: 700;
-              margin-left: ${isWideTable ? '6px' : '8px'};
-              border: 2px solid #2563eb;
-              -webkit-print-color-adjust: exact !important;
-              color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            .backup-count {
-              background: #bbf7d0 !important;
-              color: #166534 !important;
-              padding: ${isWideTable ? '3px 6px' : '4px 8px'};
-              border-radius: 10px;
-              font-size: ${isWideTable ? '9px' : '11px'};
-              font-weight: 700;
-              margin-left: ${isWideTable ? '6px' : '8px'};
-              border: 2px solid #16a34a;
-              -webkit-print-color-adjust: exact !important;
-              color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            .report-footer { 
-              text-align: center; 
-              margin-top: ${isWideTable ? '15px' : '25px'}; 
-              font-size: ${isWideTable ? '8px' : '10px'}; 
-              color: #444; 
-              border-top: 2px solid #d1d5db; 
-              padding-top: ${isWideTable ? '10px' : '15px'}; 
-              background: #f8fafc !important;
-              border-radius: 6px;
-              padding: ${isWideTable ? '10px' : '15px'};
-              font-weight: 500;
-              -webkit-print-color-adjust: exact !important;
-              color-adjust: exact !important;
-              print-color-adjust: exact !important;
+            .page-break {
+              page-break-before: always;
+              margin-top: 40px;
             }
             @page { 
               size: A4 landscape; 
-              margin: ${isWideTable ? '5mm' : '8mm'}; 
+              margin: 8mm; 
             }
             @media print { 
               body { 
                 margin: 0; 
-                transform: scale(${isWideTable ? '0.85' : '0.95'});
+                padding: 15px;
+                transform: scale(0.85);
                 transform-origin: top left;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
               } 
-              .no-print { display: none; } 
-              .report-table { 
-                page-break-inside: avoid; 
-                width: 100%;
+              .no-print { 
+                display: none !important; 
+              } 
+              .print-btn {
+                display: none !important;
               }
-              .section-header { page-break-after: avoid; }
               * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
             }
-            /* Auto-fit table width */
-            .report-table {
-              table-layout: fixed;
-              width: 100%;
-            }
-            .report-table th,
-            .report-table td {
-              word-wrap: break-word;
-              overflow-wrap: break-word;
-            }
           </style>
         </head>
         <body>
-          <div class="report-header">
+          <div class="header">
             ${logoBase64 ? `<img src="${logoBase64}" alt="BizTras Logo" class="logo" />` : ''}
-            <div class="report-title">Cloud Infrastructure Status Report</div>
-            <div class="report-subtitle">${cloudData.reportTitle || 'Cloud Status Report'}</div>
-            <div class="report-subtitle">${backupData.reportTitle || 'Backup Server Cronjob Status'}</div>
-            <div class="report-date">Cloud: ${formatDate(cloudData.reportDates?.startDate)} - ${formatDate(cloudData.reportDates?.endDate)}</div>
-            <div class="report-date">Backup: ${formatDate(backupData.reportDates?.startDate)} - ${formatDate(backupData.reportDates?.endDate)}</div>
-            ${cloudData.totalSpaceUsed ? `<div class="total-space">📊 Total Space: ${cloudData.totalSpaceUsed}</div>` : ''}
+            <div class="company-name">BIZTRAS CLOUD</div>
+            <div class="nav-bar no-print">
+              <a href="#" onclick="window.close()">Home</a>
+              <a href="#" onclick="window.print()">Report</a>
+            </div>
           </div>
-          
-          <div class="section-header">☁️ ${cloudData.reportTitle || 'Cloud Services'}<span class="service-count">${cloudData.rows.length}</span></div>
-          <table class="report-table">
-            <thead>
-              <tr>
-                ${cloudData.columns.map(col => `<th>${col}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${generateColoredCellsForPrint(cloudData, false)}
-            </tbody>
-          </table>
-          
-          <div class="section-header">🗄️ ${backupData.reportTitle || 'Backup Servers'}<span class="backup-count">${backupData.rows.length}</span></div>
-          <table class="report-table">
-            <thead>
-              <tr>
-                ${backupData.columns.map(col => `<th>${col}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${generateColoredCellsForPrint(backupData, true)}
-            </tbody>
-          </table>
-          
-          <div class="report-footer">
-            <p>Generated: ${new Date().toLocaleString()} | Cloud: ${cloudData.rows.length} | Backup: ${backupData.rows.length}${cloudData.totalSpaceUsed ? ` | Space: ${cloudData.totalSpaceUsed}` : ''}</p>
-            <p>BizTras Cloud Infrastructure Management System</p>
+
+          <!-- CLOUD SERVICES REPORT SECTION -->
+          <div class="report-section">
+            <h1 class="report-title">${cloudData.reportTitle || 'CLOUD SERVICES REPORT'}</h1>
+            
+            <div style="text-align: center; margin-bottom: 8px;">
+              <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #000;">Report Summary</h3>
+              <div style="font-size: 11px; color: #333; margin: 2px 0; line-height: 1.2;"><strong>Start Date:</strong> ${formatDate(cloudData.reportDates?.startDate)}</div>
+              <div style="font-size: 11px; color: #333; margin: 2px 0; line-height: 1.2;"><strong>End Date:</strong> ${formatDate(cloudData.reportDates?.endDate)}</div>
+              ${cloudData.totalSpaceUsed ? `<div style="font-size: 12px; font-weight: bold; color: #4a90e2; margin: 3px 0;"><strong>Total Space Used:</strong> ${cloudData.totalSpaceUsed}</div>` : ''}
+            </div>
+
+            <!-- Cloud Services Table -->
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">Serial No</th>
+                  <th style="width: 200px;">Server Name</th>
+                  <th style="width: 80px;">Saturday</th>
+                  <th style="width: 80px;">Sunday</th>
+                  <th style="width: 80px;">Monday</th>
+                  <th style="width: 80px;">Tuesday</th>
+                  <th style="width: 80px;">Wednesday</th>
+                  <th style="width: 80px;">Thursday</th>
+                  <th style="width: 80px;">Friday</th>
+                  <th style="width: 100px;">SSL Expiry Date</th>
+                  <th style="width: 100px;">Server Status</th>
+                  <th style="width: 200px;">Remark</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${generateCloudRows()}
+              </tbody>
+            </table>
           </div>
+
+          ${backupData.rows.length > 0 ? `
+          <!-- BACKUP SERVERS REPORT SECTION -->
+          <div class="report-section">
+            <h1 class="report-title">${backupData.reportTitle || 'BACKUP SERVERS REPORT'}</h1>
+            
+            <div style="text-align: center; margin-bottom: 8px;">
+              <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 6px; color: #000;">Report Summary</h3>
+              <div style="font-size: 11px; color: #333; margin: 2px 0; line-height: 1.2;"><strong>Start Date:</strong> ${formatDate(backupData.reportDates?.startDate)}</div>
+              <div style="font-size: 11px; color: #333; margin: 2px 0; line-height: 1.2;"><strong>End Date:</strong> ${formatDate(backupData.reportDates?.endDate)}</div>
+            </div>
+
+            <!-- Backup Servers Table -->
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">Serial No</th>
+                  <th style="width: 200px;">Server Name</th>
+                  <th style="width: 120px;">SERVER STATUS</th>
+                  <th style="width: 80px;">Monday</th>
+                  <th style="width: 80px;">Tuesday</th>
+                  <th style="width: 80px;">Wednesday</th>
+                  <th style="width: 80px;">Thursday</th>
+                  <th style="width: 80px;">Friday</th>
+                  <th style="width: 80px;">Saturday</th>
+                  <th style="width: 80px;">Sunday</th>
+                  <th style="width: 200px;">Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${generateBackupRows()}
+              </tbody>
+            </table>
+          </div>
+          ` : ''}
           
           <script>
             window.onload = function() {
-              setTimeout(function() {
-                window.print();
-                window.close();
-              }, 500);
+              // Optional: Auto print when page loads
+              // setTimeout(function() { window.print(); }, 1000);
             };
           </script>
         </body>
         </html>
       `);
       printWindow.document.close();
-    }
+    };
+
+    generatePrintContent();
   };
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'} py-6`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0 capture-hide">
           <button
             onClick={() => navigate('/cloud-dashboard')}
             className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
@@ -619,147 +793,271 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             <FiArrowLeft className="mr-2" />
             Back to Edit
           </button>
+
+          {/* Data Size Indicator */}
+          <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} text-center`}>
+            📊 Report Size: {cloudData.rows.length + backupData.rows.length} total rows
+            {cloudData.rows.length + backupData.rows.length > 50 && (
+              <span className="ml-2 text-amber-600 dark:text-amber-400">
+                (Large dataset - consider paginated capture)
+              </span>
+            )}
+          </div>
           
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center px-6 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
-          >
-            <FiPrinter className="mr-2" />
-            Print Report
-          </button>
+          <div className="flex space-x-3">
+            {/* Image Capture Dropdown */}
+            <div className="capture-dropdown">
+              <button
+                onClick={captureImage}
+                className="inline-flex items-center px-6 py-2 rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 transition-colors duration-200"
+              >
+                <FiCamera className="mr-2" />
+                Capture Image
+              </button>
+              
+              {/* Dropdown Menu */}
+              <div className="dropdown-content w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                <div className="py-2">
+                  <button
+                    onClick={captureImage}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    📷 Single Image
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Capture entire report as one image
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={capturePaginatedImages}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    📚 Multiple Pages
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Split into multiple page images
+                    </div>
+                  </button>
+                  
+                  <div className="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+                    <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400">
+                      💡 For large reports (50+ rows), use multiple pages or print option
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center px-6 py-2 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+            >
+              <FiPrinter className="mr-2" />
+              Print Report
+            </button>
+          </div>
         </div>
 
-        <div className={`rounded-xl shadow-lg overflow-hidden ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
-          <div className="text-center py-8 px-6 border-b border-gray-200 dark:border-gray-700">
+        {/* Screen Preview - Matches Print Exactly */}
+        {/* MAIN REPORT CONTAINER - THIS IS WHERE THE REF IS ATTACHED */}
+        <div 
+          ref={reportRef}
+          data-capture-target="true"
+          className={`rounded-xl shadow-lg overflow-hidden ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}
+          style={{ 
+            minWidth: 'fit-content',
+            width: '100%'
+          }}
+        >
+          {/* Header with Logo */}
+          <div className="text-center py-8 px-6 border-b-2 border-blue-600">
             <img 
-              src="./biztras.png" 
+              src="/biztras.png" 
               alt="BizTras Logo" 
-              className="w-20 h-20 mx-auto mb-4 rounded-lg shadow-lg"
+              className="w-20 h-20 mx-auto mb-4 rounded-xl shadow-lg"
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
             />
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Cloud Infrastructure Status Report</h1>
-            <h2 className="text-lg sm:text-xl font-semibold mb-2">{cloudData.reportTitle || 'Cloud Status Report'}</h2>
-            <h3 className="text-lg sm:text-xl font-semibold mb-4">{backupData.reportTitle || 'Backup Server Cronjob Status'}</h3>
+            <div className="text-2xl font-bold text-blue-600 mb-4">BIZTRAS CLOUD</div>
             
-            {/* Report Info */}
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 text-sm ${
-              isDark ? 'text-gray-300' : 'text-gray-600'
-            }`}>
-              <div>
-                <strong>Cloud Services Period:</strong><br />
-                {formatDate(cloudData.reportDates?.startDate)} - {formatDate(cloudData.reportDates?.endDate)}
-              </div>
-              <div>
-                <strong>Backup Servers Period:</strong><br />
-                {formatDate(backupData.reportDates?.startDate)} - {formatDate(backupData.reportDates?.endDate)}
-              </div>
+            {/* Navigation Bar */}
+            <div className="mb-6 capture-hide">
+              <span className="text-blue-600 mx-4 cursor-pointer hover:underline text-sm">Home</span>
+              <span className="text-blue-600 mx-4 cursor-pointer hover:underline text-sm">Report</span>
             </div>
-            
-            {cloudData.totalSpaceUsed && (
-              <div className={`mt-4 inline-block px-4 py-2 rounded-lg ${
-                isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-50 text-blue-700'
-              }`}>
-                <strong>Total Space Used:</strong> {cloudData.totalSpaceUsed}
-              </div>
-            )}
           </div>
 
-          <div className="p-4 sm:p-6">
+          {/* CLOUD SERVICES REPORT SECTION */}
+          <div className="p-6 border-b-4 border-gray-200 dark:border-gray-700">
+            <h1 className="text-3xl font-bold mb-6 tracking-wide text-center uppercase">
+              {cloudData.reportTitle || 'CLOUD SERVICES REPORT'}
+            </h1>
+            
+            {/* Cloud Report Summary - Simple Text Format */}
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-bold mb-4">Report Summary</h3>
+              <div className="space-y-1 text-sm">
+                <div><strong>Start Date:</strong> {formatDate(cloudData.reportDates?.startDate)}</div>
+                <div><strong>End Date:</strong> {formatDate(cloudData.reportDates?.endDate)}</div>
+                {cloudData.totalSpaceUsed && (
+                  <div className="text-blue-600 font-bold mt-2">
+                    <strong>Total Space Used:</strong> {cloudData.totalSpaceUsed}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Cloud Services Table */}
-            <h3 className="text-lg sm:text-xl font-bold mb-4 flex items-center">
-              ☁️ {cloudData.reportTitle || 'Cloud Services Status'}
-              <span className={`ml-3 text-sm px-2 py-1 rounded-full ${
-                isDark ? 'bg-blue-900/30 text-blue-300' : 'bg-blue-100 text-blue-700'
-              }`}>
-                {cloudData.rows.length} services
-              </span>
-            </h3>
-            <div className="overflow-x-auto mb-8">
-              <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
-                  <tr>
-                    {cloudData.columns.map((column, index) => (
-                      <th
-                        key={index}
-                        className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDark ? 'text-gray-300' : 'text-gray-500'
-                        }`}
-                      >
-                        {column}
-                      </th>
-                    ))}
+            <div className="overflow-x-auto capture-table-container">
+              <table className="w-full border-collapse border-2 border-black min-w-max capture-table">
+                <thead>
+                  <tr className="bg-blue-600 text-white">
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Serial No</th>
+                    <th className="border border-black px-4 py-3 text-xs font-bold whitespace-nowrap">Server Name</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Saturday</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Sunday</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Monday</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Tuesday</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Wednesday</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Thursday</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Friday</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">SSL Expiry Date</th>
+                    <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Server Status</th>
+                    <th className="border border-black px-4 py-3 text-xs font-bold whitespace-nowrap">Remark</th>
                   </tr>
                 </thead>
-                <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
-                  {cloudData.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className={isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}>
-                      {cloudData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-center">
-                          {renderCellWithColor(row[column], column, false)}
+                <tbody>
+                  {cloudData.rows.map((row, index) => {
+                    const serialNo = index + 1;
+                    const serverName = row['Server'] || `SERVER${index + 1}`;
+                    const serverStatus = row['Status'] || 'ONLINE';
+                    const statusColors = getStatusColor(serverStatus, false, true);
+                    
+                    return (
+                      <tr key={index} className={index % 2 === 1 ? 'bg-gray-50 dark:bg-gray-700' : ''}>
+                        <td className="border border-black px-2 py-2 text-center text-xs whitespace-nowrap">{serialNo}</td>
+                        <td className="border border-black px-4 py-2 text-left text-xs font-medium uppercase whitespace-nowrap">{serverName}</td>
+                        
+                        {/* Weekday columns with colors - Saturday to Friday */}
+                        {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => {
+                          const value = row[day] || 'AUTOMATIC';
+                          const colors = getStatusColor(value, false, true);
+                          return (
+                            <td 
+                              key={day}
+                              className="border border-black px-2 py-2 text-center text-xs font-bold whitespace-nowrap"
+                              style={{ 
+                                backgroundColor: colors.bg, 
+                                color: colors.color 
+                              }}
+                            >
+                              {value}
+                            </td>
+                          );
+                        })}
+                        
+                        <td className="border border-black px-2 py-2 text-center text-xs whitespace-nowrap">
+                          {row['SSL Expiry'] ? formatDate(row['SSL Expiry']) : ''}
                         </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Backup Servers Table */}
-            <h3 className="text-lg sm:text-xl font-bold mb-4 flex items-center">
-              🗄️ {backupData.reportTitle || 'Backup Server Cronjob Status'}
-              <span className={`ml-3 text-sm px-2 py-1 rounded-full ${
-                isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-700'
-              }`}>
-                {backupData.rows.length} servers
-              </span>
-            </h3>
-            <div className="overflow-x-auto">
-              <table className={`min-w-full divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                <thead className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
-                  <tr>
-                    {backupData.columns.map((column, index) => (
-                      <th
-                        key={index}
-                        className={`px-3 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                          isDark ? 'text-gray-300' : 'text-gray-500'
-                        }`}
-                      >
-                        {column}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className={`${isDark ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
-                  {backupData.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className={isDark ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}>
-                      {backupData.columns.map((column, colIndex) => (
-                        <td key={colIndex} className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-center">
-                          {renderCellWithColor(row[column], column, true)}
+                        <td 
+                          className="border border-black px-2 py-2 text-center text-xs font-bold whitespace-nowrap"
+                          style={{ 
+                            backgroundColor: statusColors.bg, 
+                            color: statusColors.color 
+                          }}
+                        >
+                          {serverStatus}
                         </td>
-                      ))}
-                    </tr>
-                  ))}
+                        <td className="border border-black px-4 py-2 text-left text-xs whitespace-nowrap">{row['Remarks'] || ''}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className={`p-6 border-t border-gray-200 dark:border-gray-700 text-center ${
-            isDark ? 'bg-gray-700/50' : 'bg-gray-50'
-          }`}>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Generated on {new Date().toLocaleString()} • 
-              Cloud Services: {cloudData.rows.length} • 
-              Backup Servers: {backupData.rows.length}
-              {cloudData.totalSpaceUsed && ` • Total Space: ${cloudData.totalSpaceUsed}`}
-            </p>
-            <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-              BizTras Cloud Infrastructure Management System
-            </p>
-          </div>
+          {/* BACKUP SERVERS REPORT SECTION */}
+          {backupData.rows.length > 0 && (
+            <div className="p-6">
+              <h1 className="text-3xl font-bold mb-6 tracking-wide text-center uppercase">
+                {backupData.reportTitle || 'BACKUP SERVERS REPORT'}
+              </h1>
+              
+              {/* Backup Report Summary - Simple Text Format */}
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-bold mb-4">Report Summary</h3>
+                <div className="space-y-1 text-sm">
+                  <div><strong>Start Date:</strong> {formatDate(backupData.reportDates?.startDate)}</div>
+                  <div><strong>End Date:</strong> {formatDate(backupData.reportDates?.endDate)}</div>
+                </div>
+              </div>
+
+              {/* Backup Servers Table */}
+              <div className="overflow-x-auto capture-table-container">
+                <table className="w-full border-collapse border-2 border-black min-w-max capture-table">
+                  <thead>
+                    <tr className="bg-blue-600 text-white">
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Serial No</th>
+                      <th className="border border-black px-4 py-3 text-xs font-bold whitespace-nowrap">Server Name</th>
+                      <th className="border border-black px-3 py-3 text-xs font-bold whitespace-nowrap">SERVER STATUS</th>
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Monday</th>
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Tuesday</th>
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Wednesday</th>
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Thursday</th>
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Friday</th>
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Saturday</th>
+                      <th className="border border-black px-2 py-3 text-xs font-bold whitespace-nowrap">Sunday</th>
+                      <th className="border border-black px-4 py-3 text-xs font-bold whitespace-nowrap">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {backupData.rows.map((row, index) => {
+                      const serialNo = index + 1;
+                      const serverName = row['Server'] || `BACKUP${index + 1}`;
+                      const serverStatus = row['SERVER STATUS'] || 'ONLINE';
+                      const statusColors = getStatusColor(serverStatus, true, false);
+                      
+                      return (
+                        <tr key={index} className={index % 2 === 1 ? 'bg-gray-50 dark:bg-gray-700' : ''}>
+                          <td className="border border-black px-2 py-2 text-center text-xs whitespace-nowrap">{serialNo}</td>
+                          <td className="border border-black px-4 py-2 text-left text-xs font-medium uppercase whitespace-nowrap">{serverName}</td>
+                          <td 
+                            className="border border-black px-3 py-2 text-center text-xs font-bold whitespace-nowrap"
+                            style={{ 
+                              backgroundColor: statusColors.bg, 
+                              color: statusColors.color 
+                            }}
+                          >
+                            {serverStatus}
+                          </td>
+                          {/* Weekday columns Monday to Sunday */}
+                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
+                            const value = row[day] || 'RUNNING';
+                            const colors = getStatusColor(value, false, false);
+                            return (
+                              <td 
+                                key={day}
+                                className="border border-black px-2 py-2 text-center text-xs font-bold whitespace-nowrap"
+                                style={{ 
+                                  backgroundColor: colors.bg, 
+                                  color: colors.color 
+                                }}
+                              >
+                                {value}
+                              </td>
+                            );
+                          })}
+                          
+                          <td className="border border-black px-4 py-2 text-left text-xs whitespace-nowrap">{row['Remarks'] || ''}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
