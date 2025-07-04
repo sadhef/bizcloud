@@ -210,6 +210,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
       window.alert(`Error creating paginated images: ${error.message}`);
     }
   };
+
   const captureImage = async () => {
     try {
       console.log('Starting image capture...');
@@ -412,16 +413,16 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
       });
     };
 
-    // Generate table rows for cloud data exactly like the image
+    // Generate table rows for cloud data exactly like the image - REMOVED DUMMY DATA
     const generateCloudRows = () => {
       return cloudData.rows.map((row, index) => {
         const serialNo = index + 1;
-        const serverName = row['Server'] || '';
+        const serverName = row['Server'] || ''; // NO DUMMY DATA - show empty if no data
         
         // Use the exact weekday order from the image: Saturday, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday
         const weekdays = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         const weekdayCells = weekdays.map(day => {
-          const value = row[day] || 'AUTOMATIC'; // Default to AUTOMATIC like in the image
+          const value = row[day] || ''; // NO DUMMY DATA - show empty if no actual data
           const colors = getStatusColor(value, false, true);
           return `<td style="
             background-color: ${colors.bg}; 
@@ -435,7 +436,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
         }).join('');
         
         const sslExpiry = row['SSL Expiry'] ? formatDate(row['SSL Expiry']) : '';
-        const serverStatus = row['Status'] || 'ONLINE';
+        const serverStatus = row['Status'] || ''; // NO DUMMY DATA - show empty if no actual data
         const statusColor = getStatusColor(serverStatus, false, true);
         const remarks = row['Remarks'] || '';
         
@@ -460,18 +461,18 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
       }).join('');
     };
 
-    // Generate table rows for backup data
+    // Generate table rows for backup data - REMOVED DUMMY DATA
     const generateBackupRows = () => {
       return backupData.rows.map((row, index) => {
         const serialNo = index + 1;
-        const serverName = row['Server'] || '';
-        const serverStatus = row['SERVER STATUS'] || 'ONLINE';
+        const serverName = row['Server'] || ''; // NO DUMMY DATA - show empty if no data
+        const serverStatus = row['SERVER STATUS'] || ''; // NO DUMMY DATA - show empty if no actual data
         const statusColor = getStatusColor(serverStatus, true, false);
         
         // Backup weekday order: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
         const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         const weekdayCells = weekdays.map(day => {
-          const value = row[day] || 'RUNNING';
+          const value = row[day] || ''; // NO DUMMY DATA - show empty if no actual data
           const colors = getStatusColor(value, false, false);
           return `<td style="
             background-color: ${colors.bg}; 
@@ -627,6 +628,12 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               border-collapse: collapse;
               margin: 15px 0;
               font-size: 8px;
+              box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+              border-radius: 6px;
+              overflow: hidden;
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             .data-table th {
               background-color: #4a90e2 !important;
@@ -653,10 +660,6 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
-            }
-            .page-break {
-              page-break-before: always;
-              margin-top: 40px;
             }
             @page { 
               size: A4 landscape; 
@@ -688,7 +691,6 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             ${logoBase64 ? `<img src="${logoBase64}" alt="BizTras Logo" class="logo" />` : ''}
             <div class="company-name">BIZTRAS CLOUD</div>
             <div class="nav-bar no-print">
-              <a href="#" onclick="window.close()">Home</a>
               <a href="#" onclick="window.print()">Report</a>
             </div>
           </div>
@@ -882,7 +884,6 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
             
             {/* Navigation Bar */}
             <div className="mb-6 capture-hide">
-              <span className="text-blue-600 mx-4 cursor-pointer hover:underline text-sm">Home</span>
               <span className="text-blue-600 mx-4 cursor-pointer hover:underline text-sm">Report</span>
             </div>
           </div>
@@ -929,8 +930,8 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                 <tbody>
                   {cloudData.rows.map((row, index) => {
                     const serialNo = index + 1;
-                    const serverName = row['Server'] || `SERVER${index + 1}`;
-                    const serverStatus = row['Status'] || 'ONLINE';
+                    const serverName = row['Server'] || ''; // NO DUMMY DATA - show empty if no data
+                    const serverStatus = row['Status'] || ''; // NO DUMMY DATA - show empty if no actual data
                     const statusColors = getStatusColor(serverStatus, false, true);
                     
                     return (
@@ -940,7 +941,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                         
                         {/* Weekday columns with colors - Saturday to Friday */}
                         {['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => {
-                          const value = row[day] || 'AUTOMATIC';
+                          const value = row[day] || ''; // NO DUMMY DATA - show empty if no actual data
                           const colors = getStatusColor(value, false, true);
                           return (
                             <td 
@@ -1014,8 +1015,8 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                   <tbody>
                     {backupData.rows.map((row, index) => {
                       const serialNo = index + 1;
-                      const serverName = row['Server'] || `BACKUP${index + 1}`;
-                      const serverStatus = row['SERVER STATUS'] || 'ONLINE';
+                      const serverName = row['Server'] || ''; // NO DUMMY DATA - show empty if no data
+                      const serverStatus = row['SERVER STATUS'] || ''; // NO DUMMY DATA - show empty if no actual data
                       const statusColors = getStatusColor(serverStatus, true, false);
                       
                       return (
@@ -1033,7 +1034,7 @@ const CloudPrintPreview = ({ cloudData, backupData }) => {
                           </td>
                           {/* Weekday columns Monday to Sunday */}
                           {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
-                            const value = row[day] || 'RUNNING';
+                            const value = row[day] || ''; // NO DUMMY DATA - show empty if no actual data
                             const colors = getStatusColor(value, false, false);
                             return (
                               <td 
